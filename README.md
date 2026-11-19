@@ -14,6 +14,41 @@ Research snapshot: 2026-11-19. Units: USD billions unless specified. Exploratory
 
 Negative equity residual means funding distress, not a negative stock price. No financing or restructuring path is modeled. The earlier unconstrained Gordon-growth scenario gave 5,446.15; v2 changes revenue constraints and the terminal methodology jointly, so the difference cannot be attributed solely to Gordon growth. None of these are statistically calibrated forecasts.
 
+### Evidence-anchored industry and exit sensitivity (latest extension)
+
+The combined Netflix/industry/lifecycle stress is reproducible with `python -m models.industry_calibration`. IDC's broad AI spending estimates by industry are in [industry_spending.csv](data/industry_spending.csv); the 2024 and 2028 totals are 234.6 and 631.4. They are analyst estimates/forecasts, not realized foundation-model invoices. Menlo estimates 176.8 of 2026 deployment spending, including 94.2 model/inference; its sample comprises US decision makers and Menlo is an Anthropic investor. Use IDC sector weights and growth rates to extrapolate the Menlo proxy, not to add the two totals. 2026 sector weights interpolate IDC's 2024–2028 endpoints.
+
+```math
+g_i=(B_{i,2028}/B_{i,2024})^{1/4}-1,\quad w_i=\frac{\sqrt{B_{i,2024}B_{i,2028}}}{\sum_j\sqrt{B_{j,2024}B_{j,2028}}}
+```
+
+```math
+D_{i,0}=176.8w_i,\quad D_{i,t}=D_{i,t-1}[1+0.03+(m g_i-0.03)\max(0,1-\max(0,t-2)/8)]
+```
+
+```math
+C_t=\left[c_0+(c_{10}-c_0)\min(t/10,1)\right]\sum_iD_{i,t},\quad c_0=\frac{81-B_0/2}{176.8}
+```
+
+```math
+p_D=1-(1-0.08)^{1/5}=0.01654,\quad p_{\mathrm{distress,proxy}}=p_D(0.045+0.035)=0.001323
+```
+
+The effective capture c includes geography, vendor share, application/infrastructure overlap and downstream leakage; it is not observed. The starting ratio implicitly assumes 50% of subscription revenue is personal. The three growth multipliers m are 0.7, 1, 1.5 and terminal effective captures are 15%, 30%, 50%, all explicit assumptions. The enterprise ceiling replaces rather than stacks with the arbitrary aggregate ceiling; it includes all consumption as a proxy and excludes personal invoices. No sector-level Claude invoice share or exact supported-country denominator is identified. The lifetime tail carries forward year-10 total revenue without an additional cap.
+
+BCG's 30,000+ US-listed firms show 8% all-cause five-year delisting for revenue over 3.5B. Daepp et al. report 4.5% bankruptcy and 3.5% liquidation among recorded exits across a different historical population. Their product is a cross-sample distress proxy, not an estimated Anthropic-specific hazard. Historical large-US outright failure was 0.09% per year, an independent order-of-magnitude check. The bear case treats all delistings as zero recovery (deliberately severe), not a claim that acquisitions destroy value. Decline/renewal rates remain uncalibrated and exit applies only after year ten; no M&A recovery is credited. These are bounds/sensitivities, not statistical confidence intervals.
+
+| Scenario | Year 5 enterprise cap | Year 10 enterprise cap | Annual tail exit | EV | Equity residual |
+|---|---:|---:|---:|---:|---:|
+| Bear | 109.69 | 83.10 | 1.654% | -281.25 | -179.44 |
+| Base | 187.40 | 246.84 | 0.132% | 70.23 | 172.04 |
+| Bull | 380.88 | 763.33 | 0.090% | 790.69 | 892.51 |
+
+Base attribution (USD B equity): previous Netflix-only 180.27; industry only 160.23; exit only 192.53; joint 172.04. Interactions exist. The previous tables remain reference scenarios. 13 tests pass locally.
+
+Sources: [IDC 2024 AI primer](https://info.idc.com/rs/081-ATC-910/images/DA-Market-Primer-AI-and-GenAI.pdf), [Menlo 2026](https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/), [BCG 1975–2025](https://www.bcg.com/publications/2026/why-do-companies-fail-us-failure-rates), [Daepp et al. 2015](https://doi.org/10.1098/rsif.2015.0120), [large UK listed corporations study (also reports historical large-US benchmark)](https://doi.org/10.1080/00076791.2021.1893696).
+
+
 ## Mathematical valuation methodology
 
 All monetary variables are in **USD billions**, except unit prices. Time $t$ is measured in annual steps from the October 2026 run-rate snapshot. Quantities identified as assumptions are scenario inputs, not estimated facts.
