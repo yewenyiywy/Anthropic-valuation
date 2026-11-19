@@ -12,23 +12,6 @@ Research snapshot: 2026-11-19. Units: USD billions unless specified. Exploratory
 
 Negative equity residual means funding distress, not a negative stock price. No financing or restructuring path is modeled. The earlier unconstrained Gordon-growth scenario gave 5,446.15; v2 changes revenue constraints and the terminal methodology jointly, so the difference cannot be attributed solely to Gordon growth. None of these are statistically calibrated forecasts.
 
-## Why we replace Gordon growth
-
-The Gordon model assumes a normalized cash flow grows at a fixed rate indefinitely, conditional on a continuing business:
-
-```math
-TV_T=\frac{FCF_T(1+g)}{W-g}
-```
-
-
-It is mathematically valid when the cash-flow assumptions hold and the discount rate exceeds growth. It is not a reliable default for a young model provider facing commoditization, price competition and business-model displacement. A zero or negative growth rate is possible even in Gordon; the issue is imposing one permanent regime.
-
-- [Chan, Karceski and Lakonishok (2003)](https://www.nber.org/papers/w8282) find weak persistence and limited predictability of long-run firm earnings growth.
-- [BLS 2013 cohort](https://www.bls.gov/opub/ted/2024/34-7-percent-of-business-establishments-born-in-2013-were-still-operating-in-2023.htm): 34.7% of business establishments survived ten years.
-- [BLS 2000 cohort](https://www.bls.gov/opub/ted/2026/outlast-state-establishment-survival-rates-from-2000-to-2026.htm): 15.7% survived 26 years. These are establishments, not matched public technology firms; neither number calibrates Anthropic's hazard.
-
-A growing industry does not guarantee a particular company's cash flows grow. Industry gains may accrue to customers and competitors. The new model permits contraction, renewal, and absorbing exit. It uses a finite 30-year horizon, zero residual value thereafter, explicitly a conservative truncation assumption rather than proof the company will cease to exist.
-
 ## Mathematical valuation methodology
 
 All monetary variables are in **USD billions**, except unit prices. Time $t$ is measured in annual steps from the October 2026 run-rate snapshot. Quantities identified as assumptions are scenario inputs, not estimated facts.
@@ -308,6 +291,24 @@ Y_t=R_t-C_t-O_t-X_t,\qquad FCF_t=Y_t-0.25\max(Y_t,0)
 Cash tax proxy, no working capital forecast. Commitments are a floor, not additional spend on top of variable compute. Historical CFO less PPE purchases is 5.644, or 3.689 after lease prepayments; neither is normalized FCFF.
 
 ### Step 10 — Lifecycle continuation (replaces Gordon terminal value)
+
+#### Why replace the Gordon Growth Model?
+
+The Gordon model assumes a normalized cash flow grows at a fixed rate indefinitely, conditional on a continuing business:
+
+```math
+TV_T=\frac{FCF_T(1+g)}{W-g}
+```
+
+
+It is mathematically valid when the cash-flow assumptions hold and the discount rate exceeds growth. It is not a reliable default for a young model provider facing commoditization, price competition and business-model displacement. A zero or negative growth rate is possible even in Gordon; the issue is imposing one permanent regime.
+
+- [Chan, Karceski and Lakonishok (2003)](https://www.nber.org/papers/w8282) find weak persistence and limited predictability of long-run firm earnings growth.
+- [BLS 2013 cohort](https://www.bls.gov/opub/ted/2024/34-7-percent-of-business-establishments-born-in-2013-were-still-operating-in-2023.htm): 34.7% of business establishments survived ten years.
+- [BLS 2000 cohort](https://www.bls.gov/opub/ted/2026/outlast-state-establishment-survival-rates-from-2000-to-2026.htm): 15.7% survived 26 years. These are establishments, not matched public technology firms; neither number calibrates Anthropic's hazard.
+
+A growing industry does not guarantee a particular company's cash flows grow. Industry gains may accrue to customers and competitors. The new model permits contraction, renewal, and absorbing exit. It uses a finite 30-year horizon, zero residual value thereafter, explicitly a conservative truncation assumption rather than proof the company will cease to exist.
+
 
 Start year 10 in Mature. States in order: Mature, Declining, Renewed, Exited. Exit is absorbing. Annual exit probability e, decline probability d, renewal probability u are assumed, not fitted.
 
