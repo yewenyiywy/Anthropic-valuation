@@ -9,6 +9,8 @@ Required manifest fields:
 - `target`: `equity_market_cap_usd_b`
 - `model_entrypoint`: `models.joint_customer_states.forecast_joint`
 - `model_scope`: `full_company_profile`
+- `evidence_tier`: `observed_historical` (validated imputations are a separate
+  empirical development tier; synthetic labels are simulation only)
 - `training_objective`: `equity_log1p_mae`
 - `horizon_years`: 5
 - `thresholds`: max_wape 0.30, max_abs_bias 0.15, min_families 10, min_cycles 2
@@ -32,6 +34,8 @@ Artifact names and evidence:
 | freeze_attestation | independent timestamped evidence of preregistration and checkpoint/prediction hashes before label access |
 | review | independent source and execution review, sample coverage, corporate actions, label comparability, calibration and uncertainty, signed decision |
 | engine | models/joint_customer_states.py |
+| model_contract | JSON: entrypoint, source_fingerprint, mechanisms (exact MECHANISMS set in gate); document architecture, state dimensions and allowed structural zeros |
+| execution_trace | CSV: sample_id, mechanism, status, architecture_sha256, checkpoint_sha256, trace_evidence, input_evidence, ablation_evidence, structural_zero_source; one row per mechanism per issuer including `anthropic_application`; status active or evidence_supported_structural_zero only |
 
 Use stable family IDs reflecting mergers and predecessor/rebranded entities;
 the exposed-name list is a safeguard, not a substitute for resolving aliases.
