@@ -28,7 +28,13 @@ class EngineRevision(unittest.TestCase):
     def test_commitment_diagnostics(self):
         for r in forecast_joint()[0]:
             self.assertGreaterEqual(r['idle_commitment_cost'],0)
-            self.assertAlmostEqual(max(r['commitment_floor'],r['revenue']*SCENARIOS['base']['cost_ratio']),r['compute_cost'])
+            self.assertAlmostEqual(max(r['commitment_floor'],r['revenue']*r['cost_ratios'][0]),r['compute_cost'])
+    def test_cost_path_converges_from_reported_ratios(self):
+        from models.accounting import anthropic_anchor
+        a=anthropic_anchor(); rows=forecast_joint()[0]; p=SCENARIOS['base']
+        self.assertAlmostEqual(rows[0]['cost_ratios'][0],p['cost_ratio']+(a['compute']-p['cost_ratio'])*2**(-1/3))
+        self.assertLess(abs(rows[-1]['cost_ratios'][1]-p['other_ratio']),abs(rows[0]['cost_ratios'][1]-p['other_ratio']))
+        self.assertEqual(forecast_joint(cost_half_life=None)[0][0]['cost_ratios'],(p['cost_ratio'],p['other_ratio'],p['capex']))
     def test_parameter_uncertainty_widens(self):
         a=simulate(n=64,parameters=False); b=simulate(n=64)
         self.assertGreater(b['p95']-b['p05'],a['p95']-a['p05'])

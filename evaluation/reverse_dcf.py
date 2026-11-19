@@ -42,12 +42,25 @@ def solve(target, lever, tol=1e-4):
         else: hi = mid
     return dict(out, implied=(lo + hi) / 2)
 
+def steady_margin(lever, x):
+    """Implied steady-state after-tax economic margin and its percentile among
+    18 cloud-software SBC-adjusted FCF margins five-six years after origin."""
+    from models.valuation import SCENARIOS, tail_margins
+    from evaluation.margin_development import percentile
+    p = dict(SCENARIOS['base']); kind, key = LEVERS[lever][:2]
+    if x is not None:
+        if kind == 'factor': p.update(draw_parameters(x)[0])
+        elif kind == 'scenario': p[key] = x
+    m = tail_margins(p)[0]
+    return dict(steady_after_tax_margin=m, peer_percentile=percentile(m))
+
 def run(target):
     base = forecast_joint()[2]
     ref = dict(scenario_factor=0., acquisition_rate=.20, initial_volume=1.65, terminal_capture=initial_capture(), demand_growth=1., compute_cost_ratio=.48, wacc=.12, terminal_growth=.03)
     return dict(status='diagnostic: implied single-lever assumptions, not a forecast',
                 target_equity=target, base_equity=base,
-                levers=[dict(solve(target, k), base_value=ref[k]) for k in LEVERS])
+                base_margin=steady_margin('wacc', None),
+                levers=[(lambda r: dict(r, base_value=ref[k], **(steady_margin(k, r['implied']) if r['implied'] is not None else {})))(solve(target, k)) for k in LEVERS])
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

@@ -4,7 +4,7 @@ All USD billions. Customer revenue weights and revenue-weighted cancellation
 rates are scenario assumptions, NOT estimated from published customer counts.
 """
 import csv
-from .valuation import ROOT, SCENARIOS, observations, commitment_floor, lifecycle_tail, overlap_factor
+from .valuation import ROOT, SCENARIOS, observations, commitment_floor, lifecycle_tail, overlap_factor, cost_ratios
 from .industry_calibration import enterprise_cap, MENLO_DEPLOYMENT, annual_probability, LARGE_DELIST_5Y, DISTRESS_EXIT_FRACTION, LARGE_US_FAILURE
 from .netflix_benchmark import benchmark
 
@@ -88,8 +88,9 @@ def forecast_cohorts(name, o=None, no_commercial_loss=False, top5_cut=0):
             trial=[x*shock_scale for x in trial]; live=[x*shock_scale for x in live]; seats=[x*shock_scale for x in seats]
         group=[trial[i]+live[i]+seats[i] for i in range(4)]
         revenue=sum(group)+personal
-        compute=max(commitment_floor(t,o),revenue*p['cost_ratio'])
-        pretax=revenue-compute-revenue*(p['other_ratio']+p['capex'])
+        c_t,o_t,x_t=cost_ratios(p,t)
+        compute=max(commitment_floor(t,o),revenue*c_t)
+        pretax=revenue-compute-revenue*(o_t+x_t)
         fcf=pretax-.25*max(0,pretax)
         rows.append(dict(year=t,revenue=revenue,personal=personal,enterprise=sum(group),group=dict(zip(GROUPS,group)),
                          losses=losses,new=new_api+new_seats,cap=cap,fcf=fcf))
