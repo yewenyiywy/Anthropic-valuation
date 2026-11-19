@@ -1,0 +1,16 @@
+metric,value,period,scope,source_url
+information_new_survival5,0.443,2013-2018,US information establishments,https://www.bls.gov/opub/ted/2024/34-7-percent-of-business-establishments-born-in-2013-were-still-operating-in-2023.htm
+information_survival10,0.291,2013-2023,US information establishments,https://www.bls.gov/opub/ted/2024/34-7-percent-of-business-establishments-born-in-2013-were-still-operating-in-2023.htm
+all_new_survival5,0.506,2013-2018,US private establishments,https://www.bls.gov/opub/ted/2024/34-7-percent-of-business-establishments-born-in-2013-were-still-operating-in-2023.htm
+all_survival10,0.347,2013-2023,US private establishments,https://www.bls.gov/opub/ted/2024/34-7-percent-of-business-establishments-born-in-2013-were-still-operating-in-2023.htm
+ramp_monthly_logo_cancel,0.04,2026-01,Ramp businesses count not revenue,https://ramp.com/data/ai-index-february-2026
+ramp_overlap_openai,0.79,2026-01,Ramp Anthropic payer count,https://ramp.com/data/ai-index-february-2026
+anthropic_nrr,9,2026-Q3,quarter over year ago same qualified customers excludes individual fixed plans,https://www.sec.gov/Archives/edgar/data/2130357/000162828026072484/anthropicpbc-sx1ax2.htm
+anthropic_q3_25_revenue,1.4,2025-Q3,rounded USD billion,https://ipo.anthropic.com/documents/us/factsheet.pdf
+anthropic_q3_26_revenue,17,2026-Q3,rounded USD billion,https://ipo.anthropic.com/documents/us/factsheet.pdf
+pitchbook_seed_failure,0.394,2025-09,non-top-decile valuation rounds cumulative eventual failure not annual,https://files.pitchbook.com/website/files/pdf/Q4_2025_PitchBook_Analyst_Note_Should_Seed_Investors_Ride_the_High_and_Pay_the_Price_20593.pdf
+pitchbook_a_failure,0.275,2025-09,same,https://files.pitchbook.com/website/files/pdf/Q4_2025_PitchBook_Analyst_Note_Should_Seed_Investors_Ride_the_High_and_Pay_the_Price_20593.pdf
+pitchbook_b_failure,0.190,2025-09,same,https://files.pitchbook.com/website/files/pdf/Q4_2025_PitchBook_Analyst_Note_Should_Seed_Investors_Ride_the_High_and_Pay_the_Price_20593.pdf
+pitchbook_c_failure,0.158,2025-09,same,https://files.pitchbook.com/website/files/pdf/Q4_2025_PitchBook_Analyst_Note_Should_Seed_Investors_Ride_the_High_and_Pay_the_Price_20593.pdf
+pitchbook_d_failure,0.128,2025-09,same,https://files.pitchbook.com/website/files/pdf/Q4_2025_PitchBook_Analyst_Note_Should_Seed_Investors_Ride_the_High_and_Pay_the_Price_20593.pdf
+pitchbook_eplus_failure,0.097,2025-09,same,https://files.pitchbook.com/website/files/pdf/Q4_2025_PitchBook_Analyst_Note_Should_Seed_Investors_Ride_the_High_and_Pay_the_Price_20593.pdf
