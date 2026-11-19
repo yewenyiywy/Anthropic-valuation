@@ -486,6 +486,21 @@ FY2000 flat-revenue and unattenuated-growth baselines have MAPE 50.23% and 129.3
 
 This is **not** a full customer-state or equity valuation backtest: aggregate revenue cannot identify customer-level acquisition, churn, pricing, costs or firm failure. Recall cannot be computed without defined and predicted failure labels. The long-horizon result rejects the aggregate growth extrapolation.
 
+#### Five-year endpoint (FY1999 to FY2004)
+
+[Supplemental SEC financial statements](data/dotcom_five_year.csv) provide eight comparable reported endpoints; AOL merger and Excite bankruptcy remain censored. No failure prediction is scored. The original fixed-fade MAPE/WAPE are 1,106.82%/230.14%; one-year half-life 120.15%/49.06%; flat 73.03%/61.19%.
+
+The reduced-state calibration caps the initial log growth and then decays it:
+
+```math
+g_{i,0}=\operatorname{clip}(\alpha\ln(R_{i,1999}/R_{i,1998}),-c,c),\quad g_{i,t}=g_{i,0}2^{-(t-1)/h}
+```
+```math
+\widehat R_{i,t}=\widehat R_{i,t-1}\exp(g_{i,t})
+```
+
+Leave out the target issuer entirely and minimize mean absolute log error over other issuers' FY2000–03 outcomes; no FY2004 outcome enters the fit. Five-year MAPE/WAPE 76.48%/41.08%. This is retrospective cross-company transfer and a terminal-year holdout, NOT a 1999-vintage calibration. A mature-growth extension worsens MAPE to 94.52%. The flat baseline remains better on MAPE. [Executable evaluation](evaluation/five_year.py).
+
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
 The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
@@ -506,13 +521,27 @@ c_{\mathrm{compute}}=18.808/33.242=56.58\%,\quad c_{\mathrm{other}}=15.694/33.24
 
 These are sensitivities only: accrual expense includes noncash items, and treating it as a cash ratio indefinitely is not a calibrated FCFF forecast. The updated bridge is a conditional accounting figure, not proof of completed financing or settlement. Customer life-stage weights, cohort transition probabilities, consumer conversion, and sustainable marginal cost are still unidentified. Do not replace the main conditional scenario with a claim of empirically validated fair value.
 
+#### Growth-decay transfer sensitivity
+
+The original joint model's common fade can be replaced with exponential half-life 0.5–2 years. These are stress scenarios informed by the historical folds, not identified Anthropic transition probabilities. Using 128 common macro paths, seed 42, adjusted balance sheet:
+
+| Growth fade | Original cost | Reported compute ratio | Both reported expense ratios |
+|---|---:|---:|---:|
+| Original | 183.48 | 148.12 | -41.36 |
+| 0.5 year | 94.58 | 72.88 | -64.19 |
+| 1 year | 127.53 | 101.57 | -53.32 |
+| 2 years | 170.41 | 137.33 | -43.42 |
+
+These are mean equity residuals ($B), not validated fair-value estimates. Expense ratios are accrual proxies; no validated equity backtest.
+
 ## 9. Reproduction and data
 
-36 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+38 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
 python -m evaluation.company_oos
+python -m evaluation.five_year
 python -m unittest discover -s evaluation -v
 ```
 
