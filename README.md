@@ -206,6 +206,8 @@ The effective capture c includes geography, vendor share, application/infrastruc
 
 ## 5. Joint enterprise revenue state model
 
+**Age-dependent survival candidate.** Fit the BLS 2013 information-establishment cohort ages 1–5 using a Weibull survival curve: shape 0.642, scale 6.898 years. Ages 6–10 diagnostic survival MAE falls from 6.334 to 0.546 percentage points (same cohort, not independent). Seed-age hazard estimates: 25.14%, 14.97%, 12.56%, 11.20%, pooled 4+ 8.97%. With European seed-to-A CIF anchors and all mechanisms active, 128 matched macro paths yield $162.97B mean conditional equity vs $162.68B baseline. This is a component candidate, not full historical equity accuracy or parameter promotion. See [protocol](evaluation/full_model_survival_protocol.md); `python -m evaluation.full_model_survival`.
+
 ### 5.1 Customer groups, closure and commercial churn
 
 BLS establishment survival gives annual closure proxies (early information 15.03%, age 5–10 information 8.06%, age 5–10 general 7.27%); large-company distress proxy 0.132% is described in Section 7. PitchBook funding-stage eventual failure is documented but not annualized without a horizon. Ramp January 2026 reports ~4% monthly customer-count cancellation, not revenue loss; annualizing is a constant-rate sensitivity. Base revenue weights early/scale-up/SME/large are 15/25/30/30%, churn transfer factors f are 0.8/0.55/0.45/0.20. They are unknown, assumed. Conditional commercial loss q removes overlap with closure h. The resulting annual retention is 69.0/78.7/82.6/92.3%. The prior market-share multiplier is omitted to avoid counting cancellation twice.
