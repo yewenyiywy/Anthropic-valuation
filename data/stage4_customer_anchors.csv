@@ -1,0 +1,21 @@
+company,scope,metric,value,qualifier,period_end,available_by,source
+Fastly,enterprise above revenue threshold,prior_count,274,exact,2019-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1517413/000151741320000263/fsly-20200930.htm
+Fastly,enterprise above revenue threshold,current_count,313,exact,2020-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1517413/000151741320000263/fsly-20200930.htm
+Fastly,enterprise above revenue threshold,revenue_share,0.88,rounded,2020-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1517413/000151741320000263/fsly-20200930.htm
+Fastly,all customer revenue,nrr,1.412,rounded,2020-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1517413/000151741320000263/fsly-20200930.htm
+Zoom,customers above ten employees,prior_count,74100,approximate,2019-10-31,2020-12-31,https://www.sec.gov/Archives/edgar/data/1585521/000158552120000299/zm-20201031.htm
+Zoom,customers above ten employees,current_count,433700,approximate,2020-10-31,2020-12-31,https://www.sec.gov/Archives/edgar/data/1585521/000158552120000299/zm-20201031.htm
+Datadog,customers with ARR at least 100k,prior_count,727,exact,2019-09-30,2020-11-17,https://www.sec.gov/Archives/edgar/data/1561550/000156459020052986/ddog-ex991_6.htm
+Datadog,customers with ARR at least 100k,current_count,1107,exact,2020-09-30,2020-11-17,https://www.sec.gov/Archives/edgar/data/1561550/000156459020052986/ddog-ex991_6.htm
+Datadog,all customer ARR,nrr,1.30,lower_bound,2020-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1561550/000156459020053609/ddog-10q_20200930.htm
+Cloudflare,paying above 100k annualized revenue,prior_count,451,exact,2019-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1477333/000147733320000042/cloud-20200930.htm
+Cloudflare,paying above 100k annualized revenue,current_count,736,exact,2020-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1477333/000147733320000042/cloud-20200930.htm
+Twilio,active accounts,prior_count,172092,exact,2019-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1447669/000144766920000209/twlo-20200930.htm
+Twilio,active accounts,current_count,208000,lower_bound,2020-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1447669/000144766920000209/twlo-20200930.htm
+Twilio,quarterly same customer revenue,nrr,1.37,rounded,2020-09-30,2020-11-30,https://www.sec.gov/Archives/edgar/data/1447669/000144766920000209/twlo-20200930.htm
+Wix,premium subscriptions,current_count,5300000,rounded,2020-09-30,2020-11-12,https://www.sec.gov/Archives/edgar/data/1576789/000117891320003117/exhibit_99-1.htm
+Wix,premium subscriptions,quarter_net_additions,302000,rounded,2020-09-30,2020-11-12,https://www.sec.gov/Archives/edgar/data/1576789/000117891320003117/exhibit_99-1.htm
+Zscaler,customer ARR,nrr,1.20,rounded,2020-07-31,2020-10-31,https://www.sec.gov/Archives/edgar/data/1713683/000171368320000163/zs-20200731.htm
+DocuSign,customers above 300k ACV,current_count,542,exact,2020-10-31,2020-12-04,https://www.sec.gov/Archives/edgar/data/1261333/000126133320000260/docu-20201031.htm
+DocuSign,company revenue,subscription_share,0.96,rounded,2020-10-31,2020-12-04,https://www.sec.gov/Archives/edgar/data/1261333/000126133320000260/docu-20201031.htm
+LinkedIn,corporate solutions customers,annual_count_growth,0.33,rounded,2015-06-30,2015-09-30,https://www.sec.gov/Archives/edgar/data/1271024/000127102415000020/a20150630-10qdocument.htm

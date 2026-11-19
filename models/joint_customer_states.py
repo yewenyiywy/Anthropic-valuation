@@ -95,10 +95,12 @@ def propagate(x,K,vs):
     x=np.einsum('idqv,ivw->idqw',x,vs)
     return (x.reshape(72,7).T@K).T.reshape(8,3,3,7)
 
-def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None,scenario_overrides=None,profile=None,growth_half_life=None,seed_hazards=None,seed_cif=None):
+def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None,scenario_overrides=None,profile=None,growth_half_life=None,seed_hazards=None,seed_cif=None,accounting=None):
     if growth_half_life is not None and growth_half_life<=0: raise ValueError('positive half life required')
     if profile is not None and (o is None or scenario_overrides is not None or seed_hazards is not None or seed_cif is not None):
         raise ValueError('company profile requires explicit company observations and scenario')
+    if accounting is not None and profile is not None and 'cashflow' in profile:
+        raise ValueError('accounting candidate cannot be combined with custom cashflow')
     o=observations() if o is None else o; p=dict(SCENARIOS[name]); a=INPUTS[name]; b=PARAM[name]
     path=[1]*10 if regime_path is None else list(regime_path)
     if len(path)!=10 or any(k not in (0,1,2) for k in path): raise ValueError('need ten macro states')
@@ -155,14 +157,26 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
         live*=scale; trial*=scale; seats*=scale
         revenue=earn(live+trial+seats)+personal; compute=max(commitment_floor(t,o) if profile is None else profile['commitment_floor'](t),revenue*p['cost_ratio'])
         pretax=revenue-compute-revenue*(p['other_ratio']+p['capex']); fcf=pretax-.25*max(0,pretax)
-        if profile is not None and 'cashflow' in profile:
+        accounting_trace={}
+        if accounting is not None:
+            from .accounting import cashflow, ratios
+            ar=ratios(accounting['anchor'],p,t,accounting.get('fade_years',5),accounting.get('terminal_da',.03))
+            accounting_trace=cashflow(revenue,rows[-1]['revenue'] if rows else o['run_rate'],commitment_floor(t,o) if profile is None else profile['commitment_floor'](t),ar,accounting.get('nwc_ratio',0.),accounting.get('da_compute_share',.5))
+            fcf=accounting_trace['fcf']
+            compute=accounting_trace['compute_cash']
+        elif profile is not None and 'cashflow' in profile:
             fcf=profile['cashflow'](revenue,t)
         rows.append(dict(year=t,revenue=revenue,fcf=fcf,regime=reg,vendor_mass=(live+trial+seats).sum(axis=(0,1,2)).tolist(),
                          price_factor=1-(1-p['price'])*fade,volume_factor=1+(p['volume']-1)*fade,
-                         pilot_conversion=p['conversion'],compute_cost=compute,capex=revenue*p['capex'],
+                         pilot_conversion=p['conversion'],compute_cost=compute,capex=accounting_trace.get('capex',revenue*p['capex']),accounting=accounting_trace,
                          personal_revenue=personal,enterprise_revenue=earn(live+trial+seats),
                          enterprise_ceiling=cap,ceiling_binding=scale<1-1e-10))
-    tail,_=lifecycle_tail(rows[-1]['revenue'],p,o) if profile is None else profile['tail'](rows[-1]['revenue'],p,o)
+    tail_p=dict(p)
+    if accounting is not None:
+        # Tail margins already include D&A/CapEx; use the consistent cash compute
+        # ratio only for the separate committed-capacity shortfall.
+        tail_p['cost_ratio']-=accounting.get('terminal_da',.03)*accounting.get('da_compute_share',.5)
+    tail,_=lifecycle_tail(rows[-1]['revenue'],tail_p,o) if profile is None else profile['tail'](rows[-1]['revenue'],tail_p,o)
     ev=sum(x['fcf']/(1+p['wacc'])**x['year'] for x in rows)+tail
     return rows,ev,ev+o['proforma_cash']-o['proforma_convertibles']
 

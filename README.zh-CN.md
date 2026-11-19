@@ -8,6 +8,8 @@
 
 ## 1. 结论
 
+**第四阶段交接：** 17 家候选企业，9 家已有 20 条预测时点 SEC 客户观测，完整验证客户画像仍为 0。会计桥接为未训练的可选方案，独立五年股权 WAPE 尚未测得，发布门禁未通过。见[预注册与后续步骤](evaluation/stage4_preregistration.md)。本地 94 项测试通过。
+
 **历史完整模型验证状态：** 五家云计算公司新增14条预测时点已知客户指标；0/5完整客户画像符合正式估值要求。直接沿用市值的基线WAPE为58.82%，完整模型估值WAPE尚无，不是零。账户存量变化无法区分新增与流失。运行 `python -m evaluation.customer_identification`，见[数据证据](data/cloud_customer_vintage_evidence.csv)。
 
 **股权损失开发训练：** 四家1999年公司、60组结构参数和11组市场溢价参数。已揭示云计算诊断集的五年股权WAPE：基线89.66%、结构拟合64.46%、溢价拟合66.94%，直接沿用初始市值58.82%；收入WAPE分别24.57%、31.47%、24.57%。未通过验证，不迁移参数，不声称盲测。见[实验协议](evaluation/equity_training_protocol.md)，运行 `python -m evaluation.equity_training`。
