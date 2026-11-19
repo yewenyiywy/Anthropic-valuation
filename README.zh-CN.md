@@ -49,6 +49,47 @@ BCG对逾3万家美国上市公司的研究发现，收入超过35亿美元企�
 Sources: [IDC 2024 AI primer](https://info.idc.com/rs/081-ATC-910/images/DA-Market-Primer-AI-and-GenAI.pdf), [Menlo 2026](https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/), [BCG 1975–2025](https://www.bcg.com/publications/2026/why-do-companies-fail-us-failure-rates), [Daepp et al. 2015](https://doi.org/10.1098/rsif.2015.0120), [large UK listed corporations study (also reports historical large-US benchmark)](https://doi.org/10.1080/00076791.2021.1893696).
 
 
+### 最新扩展 — 客户类型与商业流失群组DCF
+
+**最新条件基准股权价值150.07十亿美元。** 原情景保留用于归因。运行 `python -m models.customer_cohorts`。来源登记见 [customer_risk.csv](data/customer_risk.csv)。[官方客户案例](https://www.anthropic.com/customers) 与 [IPO资料](https://ipo.anthropic.com/documents/us/factsheet.pdf) 列举Lovable、Replit、Ramp、Jane Street、Walmart、SAP等；案例不具代表性，未披露各类客户实际账单。客户类型×部署状态×账单类别互斥，不再把试点与创业公司当成互斥类型。
+
+BLS经营单位数据给出年关闭代理率（新创信息业15.03%、已存活5年信息业8.06%、已存活5年一般经营单位7.27%）；大型企业困境退出代理0.132%沿用上一版。PitchBook融资阶段最终失败率单独登记，缺少期限不直接年化。Ramp 2026年1月约4%的月客户数量取消率，不是收入加权流失率；年化是假设恒定的敏感性。基准收入权重为早期/成长/中小企业/大型15/25/30/30%，收入流失传导系数f为0.8/0.55/0.45/0.20，均为未知的情景假设。商业流失q以企业生存为条件，避免与关闭h重复，年留存率分别为69.0/78.7/82.6/92.3%。不额外重复施加旧模型份额乘数。
+
+```math
+p_L=1-(1-0.04)^{12}=0.38729
+```
+
+```math
+q_i=\max\left(0,\frac{f_i p_L-h_i}{1-h_i}\right),\qquad s_i=(1-h_i)(1-q_i)
+```
+
+```math
+L_{i,t}=[L_{i,t-1}+T_{i,t-1}p_{\mathrm{GTM}}m_{\mathrm{rollout}}]s_iF_{i,t}K_t+(1-\alpha_t)w_iJ_t
+```
+
+```math
+T_{i,t}=\alpha_t w_iJ_t,\quad \alpha_t=0.1+0.5d_t
+```
+
+```math
+J_t=nd_t\sum_i(L_{i,t-1}+T_{i,t-1})+\rho(1-d_t)\sum_i(L_{i,t-1}+T_{i,t-1})(1-s_i^{\mathrm{plan}})
+```
+
+```math
+E_t=\sum_i(L_{i,t}+T_{i,t}+B_{i,t}^{\mathrm{enterprise}}),\quad R_t=\min(E_t,C_t)+B_t^{\mathrm{personal}}
+```
+
+L为正式部署用量收入，T为试点用量收入，F为条件融资与支出乘数，K为存续客户用量×价格，J为计划新增用量收入，d为增长衰减，rho为成熟期补充流失的销售比例（0.5/1/1.25）。企业席位按照客户群留存独立递推；个人订阅保留Netflix定价约束与雇主替代修正。行业收入上限C仅应用于企业。净增长放缓不等于没有新客户，成熟期保留获客能力；新增收入权重及补充系数为假设。Anthropic自身退出风险仍在有限生命周期尾部另行计算。暂不建模创业客户晋级与并购后的收入继承。
+
+| 情景 | 第1年收入 | 第5年收入 | 第10年收入 | 企业价值 | 股权剩余价值 | 仅关闭风险反事实股权 |
+|---|---:|---:|---:|---:|---:|---:|
+| 悲观 | 50.00 | 18.31 | 9.91 | -328.87 | -227.06 | -135.65 |
+| 基准 | 96.91 | 179.31 | 206.43 | 48.26 | 150.07 | 187.11 |
+| 乐观 | 115.69 | 396.70 | 622.57 | 831.32 | 933.13 | 995.60 |
+
+基准第一年新增销售和存量扩张前的原有企业收入流失：12.71十亿美元（关闭代理约4.71、条件商业流失约8.00）。正常流失后再对前五大客户集中度（25%历史收入代理）施加额外支出冲击：削减25%/50%/100%，股权价值分别125.33/100.59/51.10。9个月历史集中度不是10月实际结构。反事实只考虑关闭为187.11，加入商业流失150.07，保持获客政策相同；非拟合因果估计。Q3 2026披露NRR约900%，比较上年同季度合格客户，排除个人固定订阅；不是客户存活率，也不能无限外推。16项本地测试通过；尚无前瞻预测回测。
+
+
 ## 数学估值方法
 
 除单位价格外，所有金额变量均以**十亿美元**计。时间 $t$ 以2026年10月年化收入快照为起点，按年递推。标为假设的数值属于情景输入，并非真实观测或实证估计。
