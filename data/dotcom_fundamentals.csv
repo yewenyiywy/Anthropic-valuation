@@ -1,0 +1,11 @@
+company,revenue1999,gross_margin,source_margin,r2005,source_2005,scope
+Cisco,12.173,.65013,https://newsroom.cisco.com/c/r/newsroom/en/us/a/y2000/m08/cisco-systems-reports-fourth-quarter-earnings.html,24.801,https://www.sec.gov/Archives/edgar/data/858877/000119312505162626/dex991.htm,restated 1999 denominator 7914/12173
+AOL,5.724,.419287,https://www.sec.gov/Archives/edgar/data/1105705/000095013002001845/d10k405.htm,,,calendar predecessor retrospective
+Yahoo,.588608,.82705,https://www.sec.gov/Archives/edgar/data/1011006/000091205700014598/0000912057-00-014598-d1.html,5.257668,https://www.sec.gov/Archives/edgar/data/1011006/000110465906014033/a06-3183_110k.htm,486809/588608
+Amazon,1.639839,.17724,https://press.aboutamazon.com/2000/2/amazon-com-announces-profitability-in-u-s-based-book-sales-financial-results-for-fourth-quarter-1999,8.490,https://www.sec.gov/Archives/edgar/data/1018724/000119312506034166/d10k.htm,290645/1639839
+eBay,.224724,.74374,https://www.sec.gov/Archives/edgar/data/1065088/000089161802001364/f79949e10-k.htm,4.552401,https://www.sec.gov/Archives/edgar/data/1065088/000095013406003678/f17187e10vk.htm,167136/224724
+Excite@Home,.336955,,,,,missing verified margin; fold median only
+Broadcom,.521225,.593,https://www.sec.gov/Archives/edgar/data/1054374/000089256902000531/a78920e10-k.htm,2.671,https://www.sec.gov/Archives/edgar/data/1054374/000089256906000058/a16554exv99w1.htm,restated margin from 2001 filing
+Juniper Networks,.102606,.55878,https://www.sec.gov/Archives/edgar/data/1043604/000089161801000244/f70571ex13-1.txt,2.063957,https://www.sec.gov/Archives/edgar/data/1043604/000089161807000146/f27855e10vk.htm,57334/102606
+Internet Capital Group,.016536,.50677,https://www.sec.gov/Archives/edgar/data/1085621/000089322002000403/w58937e10-k.htm,.050576,https://www.sec.gov/Archives/edgar/data/1085621/000089322006000558/w18517e10vk.htm,2005 continuing operations scope changed; 2004 comparative restated to .041857
+Priceline,.482410,.11988,https://www.sec.gov/Archives/edgar/data/1075531/000100547702001441/d02-36883.txt,.962660,https://www.sec.gov/Archives/edgar/data/1075531/000110465906014649/a06-2010_110k.htm,57831/482410
