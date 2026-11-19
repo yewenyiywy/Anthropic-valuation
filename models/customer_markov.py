@@ -10,7 +10,7 @@ from .customer_cohorts import (INPUTS, hazards, customer_retention, SCENARIOS,
     observations, commitment_floor, lifecycle_tail, overlap_factor, benchmark,
     enterprise_cap, MENLO_DEPLOYMENT, annual_probability, LARGE_DELIST_5Y,
     LARGE_US_FAILURE)
-from .valuation import ROOT
+from .valuation import ROOT, cost_ratios
 
 STATES=('seed0','seed1','seed2','seed3','seed4plus','scaleup','sme','large','closed')
 GROUP=(0,0,0,0,0,1,2,3)
@@ -109,8 +109,9 @@ def forecast_markov(name,o=None,migration=True,birth_multiplier=1):
         cap=enterprise_cap(t,a['growth'],a['capture'],initial); scale=min(1,cap/(sum(trial)+sum(live)+sum(seats)))
         trial=[v*scale for v in trial]; live=[v*scale for v in live]; seats=[v*scale for v in seats]
         group=[sum(trial[i]+live[i]+seats[i] for i in range(8) if GROUP[i]==g) for g in range(4)]
-        revenue=sum(group)+personal; compute=max(commitment_floor(t,o),revenue*p['cost_ratio'])
-        pretax=revenue-compute-revenue*(p['other_ratio']+p['capex']); fcf=pretax-.25*max(0,pretax)
+        c_t,o_t,x_t=cost_ratios(p,t)
+        revenue=sum(group)+personal; compute=max(commitment_floor(t,o),revenue*c_t)
+        pretax=revenue-compute-revenue*(o_t+x_t); fcf=pretax-.25*max(0,pretax)
         rows.append(dict(year=t,revenue=revenue,group=group,birth_budget=birth_budget,birth_revenue=birth*scale,potential_birth_count=potential_count,fcf=fcf))
     tail,_=lifecycle_tail(rows[-1]['revenue'],p,o)
     ev=sum(x['fcf']/(1+p['wacc'])**x['year'] for x in rows)+tail

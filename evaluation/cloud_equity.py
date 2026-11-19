@@ -13,7 +13,14 @@ def inputs():
         equity={r['company']:r for r in csv.DictReader(f)}
     return [dict(r,**equity[r['company']]) for r in cohort()]
 
-def predict_value(r, train, theta, wacc=.12, retention=0, mature_margin=None):
+def converge_target(company):
+    """m* for CFO-capex margins, fitted on the margin development panel
+    EXCLUDING the issuer's own family (half-life fixed at 3 years)."""
+    from evaluation.margin_development import panel, fit
+    fam=company.lower()
+    return fit([x for x in panel() if x['family']!=fam],'cfo',3.)['mstar']
+
+def predict_value(r, train, theta, wacc=.12, retention=0, mature_margin='converge'):
     q=dict(company=r['company'],r1998=r['r2019'],r1999=r['r2020'])
     r0=float(r['r2020'])
     r5=float(forecast(train,q,theta)['size_blend'])
@@ -24,11 +31,17 @@ def predict_value(r, train, theta, wacc=.12, retention=0, mature_margin=None):
     R=[r0*np.exp(g*t) for t in range(6)]
     for t in range(6,11):
         R.append(R[-1]*np.exp(g*max(0,1-(t-5)/5)))
-    # Previously every issuer faded to a shared 15% margin borrowed from the
-    # Anthropic base case. Default now holds the issuer's own origin-known margin
-    # (no future information); mature_margin=.15 reproduces the old diagnostic.
-    m=m0 if mature_margin is None else mature_margin
-    margins=[m0+(m-m0)*t/10 for t in range(11)]
+    # Default: converge to a family-excluded m* with a 3-year half-life, the
+    # development estimate from 18 cloud margin paths (holding the origin margin
+    # underpredicted stage-4 margins by ~23pp). mature_margin=None holds the
+    # origin margin; a number fades linearly to it (.15 = original diagnostic).
+    # NOTE: these five issuers are in the margin panel, so m* is fitted
+    # leave-family-out but the panel design itself saw their outcomes.
+    if mature_margin=='converge':
+        m=converge_target(r['company']); margins=[m+(m0-m)*2**(-t/3) for t in range(11)]
+    else:
+        m=m0 if mature_margin is None else mature_margin
+        margins=[m0+(m-m0)*t/10 for t in range(11)]
     fcf=np.array(R)*np.array(margins)
     p=dict(SCENARIOS['base'],wacc=wacc)
     o=dict(commit_total=0,commit_to_2030=0,commit_next12m=0)
@@ -52,8 +65,9 @@ def evaluate(rows=None):
             p[f'dcf_{w}']=predict_value(r,train,theta,wacc=w)['dcf']
         p['dcf_retained']=predict_value(r,train,theta,retention=1)['dcf']
         p['dcf_shared15']=predict_value(r,train,theta,mature_margin=.15)['dcf']
+        p['dcf_hold']=predict_value(r,train,theta,mature_margin=None)['dcf']
         out.append(dict(company=r['company'],actual=float(r['cap25']),actual0=float(r['cap20']),pred=p))
-    keys=['dcf','flat_cap','constant_ps','dcf_0.08','dcf_0.1','dcf_0.15','dcf_retained','dcf_shared15']
+    keys=['dcf','flat_cap','constant_ps','dcf_0.08','dcf_0.1','dcf_0.15','dcf_retained','dcf_shared15','dcf_hold']
     scores={k:metrics([(r['pred'][k],r['actual']) for r in out]) for k in keys}
     for k in keys:
         scores[k]['bias']=sum(r['pred'][k]-r['actual'] for r in out)/sum(r['actual'] for r in out)

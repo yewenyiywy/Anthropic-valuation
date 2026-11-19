@@ -25,3 +25,18 @@ class MarginPath(unittest.TestCase):
         self.assertAlmostEqual(mp.predict('converge',.3,dict(x,h=3)),.2)
 
 if __name__=='__main__': unittest.main()
+
+class Stage4Scored(unittest.TestCase):
+    def test_score_reproduces_record(self):
+        import json
+        rec=json.load(open(mp.ROOT/'evaluation/stage4_margin_score.json'))
+        self.assertEqual(mp.score(mp.ROOT/'data/stage4_margin_labels.csv'),rec)
+        self.assertFalse(rec['promoted']); self.assertEqual(rec['scores']['all']['n'],11)
+    def test_acquired_issuers_unlabelled(self):
+        lab={r['family']:r for r in mp.read(mp.ROOT/'data/stage4_margin_labels.csv')}
+        for f in ('linkedin','netsuite','ultimate software group','athenahealth','medidata solutions','coupa'):
+            self.assertEqual(lab[f]['target_margin'],'')
+    def test_development_panel_pooled(self):
+        from evaluation.margin_development import run
+        d=run(); self.assertEqual((d['n'],d['families']),(18,16))
+        self.assertLess(d['econ']['loo']['converge3']['loo_mae_pp'],d['econ']['loo']['hold']['loo_mae_pp'])

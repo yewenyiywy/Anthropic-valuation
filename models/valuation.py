@@ -62,6 +62,23 @@ for name, extra in {
 }.items():
     SCENARIOS[name].update(extra)
 
+COST_HALF_LIFE = 3.0  # years; development estimate, evaluation/margin_development.py
+
+def cost_ratios(p, t, half_life=COST_HALF_LIFE):
+    """(compute, other, capex) ratios in forecast year t for the Anthropic run.
+
+    Starts from the reported nine-month accrual ratios (models/accounting.py)
+    and converges to the scenario's steady-state ratios with the given
+    half-life. half_life=None jumps to the scenario ratios at t=1 (the
+    pre-2026-11-19 behaviour). Applied identically in every reduced and joint
+    model so that model nesting is preserved.
+    """
+    if half_life is None:
+        return p['cost_ratio'], p['other_ratio'], p['capex']
+    from .accounting import anthropic_anchor
+    a=anthropic_anchor(); w=2**(-t/half_life)
+    return tuple(p[k]+(a[ak]-p[k])*w for k,ak in (('cost_ratio','compute'),('other_ratio','other'),('capex','capex')))
+
 def tail_margins(p, tax=.25):
     """Steady-state after-tax cash margins (mature, declining, renewed, exited).
 
@@ -127,7 +144,7 @@ def lifecycle_tail(revenue, p, o, start=10, horizon=30, margins=None, continuati
         tail.append(dict(year='continuation',pv=cont))
     return pv,tail
 
-def forecast(p, o=None, years=10, personal_ceiling=None, enterprise_ceiling=None):
+def forecast(p, o=None, years=10, personal_ceiling=None, enterprise_ceiling=None, cost_half_life=COST_HALF_LIFE):
     o = observations() if o is None else o
     # October run rate is a starting intensity; segment split is September historical proxy.
     api = o["run_rate"] * o["consumption_9m26"] / o["revenue_9m26"]
@@ -181,9 +198,10 @@ def forecast(p, o=None, years=10, personal_ceiling=None, enterprise_ceiling=None
         # Cash expense model: commitments are a floor, not added atop variable compute.
         # This allocates aggregate commitments evenly in two buckets (timing proxy).
         floor = commitment_floor(t,o)
-        compute = max(floor, revenue*p["cost_ratio"])
-        other = revenue*p["other_ratio"]
-        capex = revenue*p["capex"]
+        c_t, o_t, x_t = cost_ratios(p, t, cost_half_life)
+        compute = max(floor, revenue*c_t)
+        other = revenue*o_t
+        capex = revenue*x_t
         pretax = revenue-compute-other-capex
         # Simplified cash-tax proxy; no tax benefit for loss; no separate WC forecast.
         fcf = pretax - max(0,pretax)*.25

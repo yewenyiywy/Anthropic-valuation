@@ -1,0 +1,18 @@
+family,target_margin,target_fy_end,revenue,cfo,capex_ppe,capex_software,sbc,accn,filed,endpoint,note
+linkedin,,,,,,,,,,no standalone target-FY filing,acquired by Microsoft 2016; no margin label
+workday,0.143801,2020-01-31,3.627206,0.864598,0.343002,0,0.859571,0001327811-20-000022,2020-03-03,standalone,capex = other productive assets 0.243694 + owned real estate 0.099308; excluding real estate margin 0.171230
+netsuite,,,,,,,,,,no standalone target-FY filing,acquired by Oracle 2016; no margin label
+ultimate software group,,,,,,,,,,no standalone target-FY filing,acquired 2019; no margin label
+athenahealth,,,,,,,,,,no standalone target-FY filing,acquired 2019; no margin label
+veeva,0.392230,2020-01-31,1.104081,0.437375,0.003113,0.001208,0.115906,0001628280-20-004385,2020-03-30,standalone,software = PaymentsForSoftware
+medidata solutions,,,,,,,,,,no standalone target-FY filing,acquired 2019; no margin label
+proofpoint,0.182920,2020-12-31,1.05001,0.264488,0.07242,0,0.186699,0001564590-21-006943,2021-02-19,standalone,
+fastly,0.077070,2025-12-31,0.624018,0.094444,0.028694,0.017657,0.117323,0001517413-26-000053,2026-02-25,standalone,software = PaymentsForSoftware
+zoom,0.387691,2025-01-31,4.665433,1.945308,0.13656,0,0.931309,0001585521-25-000042,2025-02-28,standalone,
+zscaler,0.271853,2025-07-31,2.673115,0.972453,0.164252,0.081508,0.66135,0001713683-25-000158,2025-09-11,standalone,
+docusign,0.309158,2025-01-31,2.976739,1.017272,0.096988,0,0.610335,0001261333-25-000024,2025-03-18,standalone,
+datadog,0.266902,2025-12-31,3.427158,1.050135,0.049578,0.08584,0.750671,0001628280-26-008819,2026-02-18,standalone,
+wix,0.287478,2025-12-31,1.993044,0.582858,0.008553,0.001348,0.237376,0001628280-26-015222,2026-03-05,standalone,PP&E not XBRL-tagged; from cash flow statement R7: PP&E and lease prepayment 8553 + internal-use software 1348 = company capex 9901 (USD K)
+twilio,0.186577,2025-12-31,5.06722,1.003244,0.005848,0.051969,0.600407,0001447669-26-000021,2026-02-24,standalone,PP&E = PaymentsToAcquireOtherProductiveAssets
+cloudflare,0.132613,2025-12-31,2.167937,0.603114,0.315617,0,0.451454,0001477333-26-000016,2026-02-26,standalone,single PP&E tag as at origin
+coupa,,,,,,,,,,no standalone target-FY filing,acquired 2023; no margin label
