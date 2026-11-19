@@ -30,11 +30,17 @@
 
 ## 1. 模型
 
+**用途：** 将显式预测期及考虑退出风险的后续现金流折现，再加净现金，最后对模拟路径取均值以体现不确定性。$V$ 为股权剩余价值；$FCF_t$ 为第 $t$ 年自由现金流；$W$ 为年折现率；$R_{10}$ 为延续期起始收入；$\ell$ 为抽样编号；$\widehat V$ 为股权估值均值。
+
+
 ```math
 V=\underbrace{\sum_{t=1}^{10}\frac{FCF_t}{(1+W)^t}}_{\S1.2}+\underbrace{\sum_{t>10}\frac{\mathbb E[FCF_t\mid R_{10}]}{(1+W)^t}}_{\S1.3}+\underbrace{Cash-Debt}_{\S1.4},\qquad \widehat V=\frac1{1024}\sum_{\ell}V^{(\ell)}\ (\S1.5)
 ```
 
 ### 1.1 收入
+
+**用途：** 将企业账单与个人订阅分开，由需求上限及供应商份额限制实际收入。$R_t$ 为总收入；$s_t$ 为需求不足时的缩减系数；$\mathcal R$ 将潜在账单金额转为 Claude 实际收入。
+
 
 ```math
 R_t=s_t\,\mathcal R(L_t+T_t+S_t)+B^{p}_t,\qquad \mathcal R(X)=\sum_{idhv}X_{idhv}r_v,\qquad s_t=\min\Big(1,\frac{C_t}{\mathcal R(L_t+T_t+S_t)}\Big)
@@ -49,6 +55,9 @@ R_t=s_t\,\mathcal R(L_t+T_t+S_t)+B^{p}_t,\qquad \mathcal R(X)=\sum_{idhv}X_{idhv
 
 #### 1.1.1 起点
 
+**用途：** 将披露的年化收入拆成互斥的初始收入类别。$R_0$ 为起始年化收入；$\omega$ 为按量计费占比；$A_0,B_0$ 分别为 API 与订阅收入池；$B^p_0$ 为假设的个人部分，其余归企业席位。
+
+
 ```math
 R_0=81,\qquad \omega=\tfrac{26.300}{33.242}=79.1\%,\qquad A_0=\omega R_0=64.1,\qquad B_0=(1-\omega)R_0=16.9,\qquad B^p_0=0.5B_0
 ```
@@ -57,6 +66,9 @@ R_0=81,\qquad \omega=\tfrac{26.300}{33.242}=79.1\%,\qquad A_0=\omega R_0=64.1,\q
 
 #### 1.1.2 客户状态张量
 
+**用途：** 按企业成熟度、停留时间、财务健康度、供应商选择跟踪潜在账单金额（并非客户人数），因为客户可能成长、倒闭或换供应商。$X_t$ 为 504 个状态单元；$\mathcal K$ 更新生命周期和健康度；$\mathcal G_t$ 调整支出；$M$ 处理供应商切换；$A_t$ 加入新账单金额。
+
+
 ```math
 X_t=\mathcal K_{Z_t}\big(\mathcal G_t(X_{t-1})\,M_{Z_t}\big)+A_t,\qquad X\in\mathbb R^{8\times3\times3\times7}_{(i,d,h,v)}
 ```
@@ -64,6 +76,9 @@ X_t=\mathcal K_{Z_t}\big(\mathcal G_t(X_{t-1})\,M_{Z_t}\big)+A_t,\qquad X\in\mat
 $i$ 生命周期（种子 0–4+、成长、中小企业、大型）· $d$ 停留期 · $h$ 健康度 · $v$ 供应商 · $Z_t$ 宏观状态。
 
 **1.1.2.1 生命周期核 $\mathcal K$**
+
+**用途：** 将创业公司累计晋级率转成条件转移概率，并同时计入倒闭与竞争性退出。$F_k$ 为第 $k$ 年累计晋级率；$U_k$ 为仍处于风险集的比例；$g_k$ 为条件晋级概率；$b_k$ 为其他竞争性退出概率；$h_k$ 为倒闭概率；有效倒闭率由宏观和健康乘数调整。
+
 
 ```math
 g_k=\frac{F_k-F_{k-1}}{U_{k-1}},\quad U_k=U_{k-1}(1-g_k-b_k-h_k),\quad h^{\mathrm{eff}}_i=\min(0.95,\,h_i\,m^Z_{\mathrm{death}}m^H_{\mathrm{death}})
@@ -78,9 +93,18 @@ g_k=\frac{F_k-F_{k-1}}{U_{k-1}},\quad U_k=U_{k-1}(1-g_k-b_k-h_k),\quad h^{\mathr
 
 **1.1.2.2 健康度** $\;\pi_{h\mid y}\propto\pi_hP(y\mid h)$, $P(y{=}1\mid h)=(.15,.75,.25)$.
 
+**用途：** 用融资信号推断潜在财务健康状态，因为获得融资并不代表已经盈利。$\pi_h$ 为先验概率；$y$ 为融资观测；$P(y\mid h)$ 为假设的观测似然；$\pi_{h\mid y}$ 为更新后的概率。
+
+
 **1.1.2.3 宏观** $\;P_Z=\begin{pmatrix}.60&.35&.05\\.18&.67&.15\\.08&.42&.50\end{pmatrix}$ （寒冬、正常、繁荣）。
 
+**用途：** 用宏观马尔可夫链体现融资、获客和存活的共同周期变化；$P_Z$ 为寒冬、正常、繁荣之间的年度转移矩阵。
+
+
 **1.1.2.4 供应商**
+
+**用途：** 将供应商流失与企业倒闭分离，避免同一损失重复计入。$s_g$ 为第 $g$ 类客户总留存率；$h_g$ 为倒闭率；$c$ 为存活条件下商业流失率；$m_c^Z$ 为宏观流失乘数；$\delta_w$ 为流向各竞争者的比例；$\sigma$ 为单双供应商切换概率；$M_{i\to w}$ 为转移概率。
+
 
 ```math
 c=\Big(1-\frac{s_g}{1-h_g}\Big)m^Z_c,\qquad M_{i\to w}=\begin{cases}c\,\delta_w&\text{流失至 }w\\(1-c)\sigma&\text{单}\leftrightarrow\text{多供应商}\\(1-c)(1-\sigma)&\text{保持}\end{cases}
@@ -89,6 +113,9 @@ c=\Big(1-\frac{s_g}{1-h_g}\Big)m^Z_c,\qquad M_{i\to w}=\begin{cases}c\,\delta_w&
 $s_g$ = 69.0/78.7/82.6/92.3% · $\delta$ = .35/.25/.15/.10/.15 （OpenAI、Google、自建、其他、不用）· $\sigma$ = .12 / .04 · $m^Z_c$ = 1.3 / 0.85 · 回流每年 .06 / .035。
 
 #### 1.1.3 增长
+
+**用途：** 分别建模降价、用量增长与试点转化，因此技术进步不会自动等比例变成收入。$d_t$ 为早期增长衰减系数；$p,q$ 为价格与用量倍数；$\mu_t$ 为二者乘积；$\alpha_t$ 为新 API 账单进入试点的比例；$\phi$ 为转化概率；$\rho$ 为部署后支出倍数（不是年数）；$f,F_t$ 调整融资带来的支出；此处 $H$ 为健康度支出乘数；$b$ 为订阅增速；$A_t^s$ 为新增席位账单金额。
+
 
 ```math
 d_t=\max\Big(0,1-\tfrac{t-1}{7}\Big),\quad \mu_t=[1-(1-p)d_t][1+(q-1)d_t],\quad \alpha_t=.1+.5d_t
@@ -102,6 +129,9 @@ L_t=\mathcal K\big([(L_{t-1}+\phi\rho T_{t-1})F_t\mu_tH]M\big)+(1-\alpha_t)A_t,\
 
 #### 1.1.4 新客户
 
+**用途：** 加入新增企业预算并补充流失客户，同时限制创业客户可由融资支持的支出。$J_t$ 为新增账单金额；$x_Z$ 为宏观获客乘数；$n$ 为早期获客率；$\eta$ 为成熟期替补因子；$s_i$ 为客户留存率；$J_t^{\mathrm{birth}}$ 为受融资上限约束的创业客户新增金额。
+
+
 ```math
 J_t=x_Z\big[n\,d_t\,\mathcal R(X_{t-1})+\eta(1-d_t)\textstyle\sum X r_v(1-s_i)\big],\qquad J^{\mathrm{birth}}_t=\min(0.2J_t,\,0.418)
 ```
@@ -109,6 +139,9 @@ J_t=x_Z\big[n\,d_t\,\mathcal R(X_{t-1})+\eta(1-d_t)\textstyle\sum X r_v(1-s_i)\b
 $n$=.20, $\eta$=1; $0.418=5049\times2\times.75\times.25\times5\%\times\overline{\text{seed round}}$.
 
 #### 1.1.5 企业需求天花板
+
+**用途：** 用各行业 AI 预算乘以 Claude 可获取份额限制企业收入，防止无约束复利。$D_{i,t}$ 为行业需求；$w_i$ 为初始行业权重；$g_i$ 为行业增速；$m$ 为情景增速乘数；$c_t,c_0,c_{10}$ 为当期、初始和长期市场获取份额（不是算力成本率）。
+
 
 ```math
 C_t=c_t\sum_iD_{i,t},\quad D_{i,t}=D_{i,t-1}\big[1.03+(mg_i-.03)\max(0,1-\tfrac{(t-2)^+}{8})\big],\quad c_t=c_0+(c_{10}-c_0)\min(\tfrac t{10},1)
@@ -118,6 +151,9 @@ $D_{i,0}=176.8\,w_i$ （[Menlo](https://menlovc.com/perspective/2026-the-state-o
 
 #### 1.1.6 个人订阅
 
+**用途：** 用付费订阅基准限制个人需求，并扣除企业付费导致的重复订阅。$B_t^{\mathrm{raw}}$ 为扣除重叠前个人收入；$e_t,e_0$ 为当期和期初雇主覆盖率；$\kappa$ 为替代强度；$N_N$ 为 Netflix 付费会员账户数（非人数）；$k$ 为相对可获得的会员比例；$F_C$ 为月均实际收费；$R_C$ 为个人收入上限。
+
+
 ```math
 B^p_t=\min\Big(B^{\mathrm{raw}}_t\tfrac{1-\kappa e_t}{1-\kappa e_0},\;R_C+(B^p_0-R_C)^+(1-\tfrac t5)^+\Big),\qquad R_C=12N_NkF_C
 ```
@@ -125,6 +161,9 @@ B^p_t=\min\Big(B^{\mathrm{raw}}_t\tfrac{1-\kappa e_t}{1-\kappa e_0},\;R_C+(B^p_0
 $\kappa$=.8/.5/.2 · $e_t$: .4→.8/.7/.6 · $N_N$=0.325B ([Netflix](https://www.sec.gov/Archives/edgar/data/1065280/000106528025000044/nflx-20241231.htm)) · $k$=5/15/30% · $F_C$=\$13.53/mo.
 
 ### 1.2 自由现金流，$t\le10$
+
+**用途：** 将收入转成简化现金流代理，同时保留算力承诺下限和成本收敛过程。$Y_t$ 为税前现金流代理；$K_t$ 为承诺算力支出下限；$c_t,o_t,x_t$ 为算力、其他运营费用和资本开支率；$\theta_0,\theta^\ast$ 为初始和稳态成本率；$H$ 为收敛半衰期；$Y_t^+$ 为正值部分，避免假设亏损立即抵税。此处税基为简化代理，非完整权责发生制 FCFF。
+
 
 ```math
 Y_t=R_t-\max(K_t,\,c_tR_t)-(o_t+x_t)R_t,\qquad FCF_t=Y_t-0.25\,Y_t^+,\qquad \theta_t=\theta^\ast+(\theta_0-\theta^\ast)2^{-t/H}
@@ -139,6 +178,9 @@ Y_t=R_t-\max(K_t,\,c_tR_t)-(o_t+x_t)R_t,\qquad FCF_t=Y_t-0.25\,Y_t^+,\qquad \the
 | $K_t$ | 算力承诺下限： $K_1$=70.7, $K_{2..4}$=126.97, $K_{5..19}$=29.95, $K_{20+}$=0 |
 
 ### 1.3 延续价值，$t>10$
+
+**用途：** 用允许衰退、再增长和困境退出的生命周期链替换确定性永续增长。$a_t$ 为各公司状态的概率加权收入；$P$ 为状态转移矩阵；$e,\delta,u$ 分别为困境退出、衰退及复苏概率；$\varsigma$ 为退市中困境比例；$g$ 为存活者长期增速；$k$ 为增长归一化系数；$\mu$ 为各状态现金流利润率；$m$ 为成熟期净现金流率；$S_t$ 为存活概率；$A$ 为收入加权转移矩阵；$B$ 为折现后矩阵；$I$ 为单位矩阵。
+
 
 ```math
 a_{10}=(R_{10},0,0,0),\quad a_t=a_{t-1}P\,\mathrm{diag}\big(k(1+g),.85k,1.08k(1+g),0\big),\quad \mathbb E[FCF_t]=a_t\mu-S_t\Big(K_t-\tfrac{c\,\mathbf 1^\top a_t}{S_t}\Big)^+
@@ -160,6 +202,9 @@ $\varsigma$：8%（[Daepp et al.](https://doi.org/10.1098/rsif.2015.0120)），�
 
 ### 1.4 股权衔接
 
+**用途：** 由运营企业价值加现金、减债务求股权剩余价值；现金和债务取自资产负债表，股权稀释须另行评估。
+
+
 ```math
 Cash-Debt=212.684-110.873\quad(\text{调整后 }232.351-109.742\text{，多 }20.80)
 ```
@@ -167,6 +212,9 @@ Cash-Debt=212.684-110.873\quad(\text{调整后 }232.351-109.742\text{，多 }20.
 稀释尚未确定。
 
 ### 1.5 不确定性
+
+**用途：** 联合抽取相关的收入与利润率冲击，同时独立考虑折现率和生命周期风险，避免把所有乐观假设同时堆叠。$n_r,n_m,n_w$ 为标准正态驱动因子；此处 $\rho$ 为相关系数（非推广倍数）；$z_r$ 为收入块冲击；$\bar z_\pm$ 将尾部对应到可比公司差异；$\Phi$ 为正态累积分布函数；$\hat F^{-1}$ 将分位数映射至实证利润率或折现率；$z_\ell$ 为三角分布生命周期冲击。
+
 
 ```math
 (n_r,n_m)\sim\mathcal N\Big(0,\begin{pmatrix}1&\rho\\\rho&1\end{pmatrix}\Big),\quad n_w\sim\mathcal N(0,1),\quad z_\ell\sim\mathrm{Tri}(-1,0,1),\quad Z_t\sim P_Z
@@ -190,7 +238,7 @@ z_r=\frac{n_r}{1.2816}\bar z_{\pm},\qquad m^\ast=\hat F_m^{-1}(\Phi(n_m)),\qquad
 | | 悲观 | 基准 | 乐观 | 来源 |
 |---|---:|---:|---:|---|
 | 早期 / 成长 / 中小 / 大型 | 30/30/25/15% | 15/25/30/30% | 5/15/30/50% | 手设 |
-| 试点占比；成功率 / 推广年数 | 25%; .20/2 | 30%; .35/3 | 20%; .50/4 | 手设 |
+| 试点占比；成功率 / 推广支出倍数 | 25%; .20/2 | 30%; .35/3 | 20%; .50/4 | 手设 |
 | 用量 $q$ / 价格 $p$ | 1.45/.65 | 1.65/.78 | 1.85/.88 | 手设 |
 | 获客 $n$ / 替补 $\eta$ | .10/.50 | .20/1 | .30/1.25 | 手设 |
 | 订阅增长 $b$ | 3% | 12% | 22% | 手设 |
@@ -214,6 +262,9 @@ z_r=\frac{n_r}{1.2816}\bar z_{\pm},\qquad m^\ast=\hat F_m^{-1}(\Phi(n_m)),\qquad
 
 ### 3.1 发布门槛
 
+**用途：** 只有独立五年股权预测达到门槛才称为验证通过。$N_{\rm fam}$、$N_{\rm cycle}$ 为独立公司族与周期数量；WAPE 衡量加权绝对误差；bias 衡量有符号总误差；市值及市销率不变为基线。
+
+
 ```math
 \text{发布}\iff N_{\text{fam}}\ge10\ \wedge\ N_{\text{cycle}}\ge2\ \wedge\ \mathrm{WAPE}_V\le30\%\ \wedge\ |\mathrm{bias}_V|\le15\%\ \wedge\ \mathrm{WAPE}_V<\min(\text{市值不变},\ \text{市销率不变})
 ```
@@ -232,6 +283,9 @@ z_r=\frac{n_r}{1.2816}\bar z_{\pm},\qquad m^\ast=\hat F_m^{-1}(\Phi(n_m)),\qquad
 
 ### 3.2 利润率路径
 
+**用途：** 用历史企业检验现金流利润率如何演化；$m$ 为经营现金流扣资本开支及资本化软件后占收入的比例，是现金流代理而非 FCFF；$H$ 为收敛半衰期。
+
+
 ```math
 m=\frac{CFO-\text{资本开支}-\text{资本化软件}}{\text{收入}}
 ```
@@ -249,6 +303,9 @@ m=\frac{CFO-\text{资本开支}-\text{资本化软件}}{\text{收入}}
 预注册选择未采用（输给样本均值）。18 个观测扣 SBC 后：中位数 11.1%，P90 24.4%；$H$=3 收敛到 18.1% 的留一误差 7.26，维持为 16.56。
 
 ### 3.3 增长与退出
+
+**用途：** 检验增长衰减，并将并购与困境退出区分。$g_0,g_t,g_\infty$ 为初始、当期及长期对数增速；$H_g$ 为增长半衰期；$h$ 为预测期限；$R_h/R_0$ 为累计收入倍数。
+
 
 ```math
 g_t=g_\infty+(g_0-g_\infty)2^{-t/H_g},\qquad \ln\tfrac{R_h}{R_0}=\textstyle\sum_{t\le h}g_t
@@ -269,6 +326,9 @@ Anthropic $g_0\approx2.57$，面板最大 0.63：超出样本范围。
 收购价为此前市值的 1.0–2.2 倍 ⇒ $e$ 只计困境退出。
 
 ### 3.4 市值回测，云 2020（已暴露，诊断）
+
+**用途：** 诊断模型是否能复现市场股权价值，而非仅复现收入；Spearman 衡量排名一致性，P/FCF 衡量市值相对现金流的倍数。
+
 
 | | 模型 | 市值不变 | 市销率不变 |
 |---|---:|---:|---:|
@@ -291,6 +351,9 @@ Anthropic $g_0\approx2.57$，面板最大 0.63：超出样本范围。
 敏感性，基准 494.63：去健康度 317.36 · 去停留期 499.11 · 去供应商 404.64 · 全关 259.22 · 寒冬/繁荣 145.51/524.66 · 成本立即到位 583.92 · $H$=6.8：417.5。
 
 ### 3.6 可比公司校准（[预注册](evaluation/margin_scale_preregistration.md)）
+
+**用途：** 用可比公司估计长期成本及折现率，并通过公司族留一比较预测方法。维持=利润率不变；均值=样本平均；线性/收敛=均值回归；岭回归=正则化回归；GBM=提升树；GP=高斯过程；MLP=神经网络。$m_t$ 为观察利润率；$m^\ast_i$ 为可比公司三年平均运营利润率；$OI_{it}$ 为营业利润；$s$ 为算力成本分配代理；$T$ 为最后观测年。CAPM 中 $\beta_L,\beta_u$ 为有杠杆/无杠杆 beta；$D,E$ 为债务/股权资本；此处 $t$ 为税率；$r_f$ 为无风险利率；ERP 为股权风险溢价；1% 债务利差为信用成本代理。
+
 
 **5 年后利润率**，368 个公司-年，39 个公司族，按族留一（[面板](data/margin_scale_panel.csv)，有幸存者偏差）：
 
