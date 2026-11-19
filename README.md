@@ -460,6 +460,36 @@ Reduced-model references: lifecycle DCF 180.47; Netflix constraint 180.27; indus
 | Tail exit/decline/renewal | .01654/.30/.03 | .001323/.20/.08 | .0009/.10/.15 |
 | WACC | 15% | 12% | 10% |
 
+### 8.2 Point-in-time company-specific validation
+
+Freeze the universe at the [September 8, 1999 top-ten market-cap ranking](https://www.internetnews.com/it-management/new-internet-giants-roam-the-street/), including the bankrupt and acquired issuers. [Vintage inputs](data/dotcom_vintage.csv) contain estimates from the [September 1999 Bear Stearns report, Exhibit 2](https://people.duke.edu/~charvey/Teaching/BA491_2000/Cc/Cc_BS.pdf) and separately identified SEC holdout outcomes. Blank cells are missing, not zero. The five available comparable CY2000 analyst forecasts have mean absolute percentage error 24.87%; this is an **external benchmark**, not validation of our joint-state model. The other five remain unscored. Acquisition/merger and fiscal-year scope must be reconciled before longer-horizon scoring.
+
+```math
+\operatorname{MAPE}=\frac1n\sum_i\left|\frac{\widehat R_i-R_i}{R_i}\right|
+```
+
+The same joint transition engine now accepts an explicit company profile (initial ledgers, customer weights and retention, transition and vendor kernels, reward, births, market limits, costs and lifecycle tail). Missing profiles fail rather than borrowing Claude parameters. The formerly proposed normalized transfer is not a company-specific forecast and must not be counted as validation. Firm-level bankruptcy and acquisition need separately estimated absorbing states; the present customer-exit process is not such an estimator.
+
+### 8.3 Anthropic-specific filing calibration and accounting sensitivity
+
+The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
+
+```math
+c_{\mathrm{compute}}=18.808/33.242=56.58\%,\quad c_{\mathrm{other}}=15.694/33.242=47.21\%
+```
+
+```math
+\Delta V_{\mathrm{bridge}}=(232.351-109.742)-(212.684-110.873)=20.798\ \mathrm{B}
+```
+
+| Base 1,024 paths, seed 42 | Mean equity residual ($B) |
+|---|---:|
+| Original assumptions, updated pro forma as-adjusted bridge | 184.83 |
+| Observed compute expense ratio held constant | 149.22 |
+| Both reported expense ratios held constant | -41.19 |
+
+These are sensitivities only: accrual expense includes noncash items, and treating it as a cash ratio indefinitely is not a calibrated FCFF forecast. The updated bridge is a conditional accounting figure, not proof of completed financing or settlement. Customer life-stage weights, cohort transition probabilities, consumer conversion, and sustainable marginal cost are still unidentified. Do not replace the main conditional scenario with a claim of empirically validated fair value.
+
 ## 9. Reproduction and data
 
 26 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. No predictive backtest. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
