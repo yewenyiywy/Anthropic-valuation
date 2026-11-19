@@ -548,6 +548,24 @@ Model selection on these same eight endpoints is exploratory; another cohort is 
 
 This new terminal year tests horizon robustness, not an independent issuer cohort. Gross margin does not consistently improve revenue predictions and should instead be tested in the cash-flow layer. Size improves dollar-weighted error but does not reliably improve relative error. No fitted Anthropic valuation change is justified. [Reproduction](evaluation/fundamental_growth.py).
 
+#### Independent issuer cohort (five-year endpoint)
+
+Eight additional issuers were identified from the contemporary December 1999 article *Internet Stocks, Naughty And Nice*: BroadVision, CMGI, DoubleClick, Exodus, Go2Net, InfoSpace, RealNetworks and VeriSign. The original ten issuers alone fit parameters using FY2000–03; prior WAPE selected the size blend as primary. Six standalone FY2004 endpoints are available; Exodus bankruptcy and Go2Net acquisition are censored, not treated as zero revenue. Retrospective accounting restatements and acquisitions mean this is issuer-external, not strict time-external validation.
+
+| Model | MAPE | WAPE | Within 20% |
+|---|---:|---:|---:|
+| Flat | 57.35% | 69.97% | 16.67% |
+| Original | 161.72% | 94.95% | 0% |
+| Saturation | 71.75% | 60.21% | 33.33% |
+| Recovery | 145.28% | 95.77% | 0% |
+| Size | 206.95% | 115.68% | 16.67% |
+| Blend | 102.22% | 74.16% | 0% |
+| Size blend (primary) | 146.96% | 92.10% | 0% |
+
+The primary model fails to generalize; saturation improves weighted error but flat wins MAPE. Do not promote a new winner from this holdout. These are revenue errors conditional on standalone survival, not equity-value errors. The next validation must address competing exit states, organic versus acquired revenue and independent calendar windows.
+
+[Data and filing links](data/dotcom_external_cohort.csv) · [Reproduction](evaluation/external_validation.py)
+
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
 The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
@@ -583,7 +601,7 @@ These are mean equity residuals ($B), not validated fair-value estimates. Expens
 
 ## 9. Reproduction and data
 
-42 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+44 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
@@ -591,6 +609,7 @@ python -m evaluation.company_oos
 python -m evaluation.five_year
 python -m evaluation.growth_comparison
 python -m evaluation.fundamental_growth
+python -m evaluation.external_validation
 python -m unittest discover -s evaluation -v
 ```
 
