@@ -157,7 +157,11 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
         pretax=revenue-compute-revenue*(p['other_ratio']+p['capex']); fcf=pretax-.25*max(0,pretax)
         if profile is not None and 'cashflow' in profile:
             fcf=profile['cashflow'](revenue,t)
-        rows.append(dict(year=t,revenue=revenue,fcf=fcf,regime=reg,vendor_mass=(live+trial+seats).sum(axis=(0,1,2)).tolist()))
+        rows.append(dict(year=t,revenue=revenue,fcf=fcf,regime=reg,vendor_mass=(live+trial+seats).sum(axis=(0,1,2)).tolist(),
+                         price_factor=1-(1-p['price'])*fade,volume_factor=1+(p['volume']-1)*fade,
+                         pilot_conversion=p['conversion'],compute_cost=compute,capex=revenue*p['capex'],
+                         personal_revenue=personal,enterprise_revenue=earn(live+trial+seats),
+                         enterprise_ceiling=cap,ceiling_binding=scale<1-1e-10))
     tail,_=lifecycle_tail(rows[-1]['revenue'],p,o) if profile is None else profile['tail'](rows[-1]['revenue'],p,o)
     ev=sum(x['fcf']/(1+p['wacc'])**x['year'] for x in rows)+tail
     return rows,ev,ev+o['proforma_cash']-o['proforma_convertibles']
