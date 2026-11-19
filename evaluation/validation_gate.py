@@ -50,11 +50,32 @@ def num(s):
     if not math.isfinite(x) or x<0: raise ValueError('invalid nonnegative value')
     return x
 
+def ranks(x):
+    order=sorted(range(len(x)),key=lambda i:x[i]); r=[0.]*len(x); i=0
+    while i<len(order):
+        j=i
+        while j+1<len(order) and x[order[j+1]]==x[order[i]]: j+=1
+        for k in range(i,j+1): r[order[k]]=(i+j)/2
+        i=j+1
+    return r
+
+def spearman(p,y):
+    """Auxiliary cross-sectional rank agreement; NOT a release threshold."""
+    if len(y)<3: return None
+    a,b=ranks(list(p)),ranks(list(y)); ma,mb=sum(a)/len(a),sum(b)/len(b)
+    num=sum((u-ma)*(v-mb) for u,v in zip(a,b))
+    den=math.sqrt(sum((u-ma)**2 for u in a)*sum((v-mb)**2 for v in b))
+    return num/den if den else None
+
 def score(p,y):
     if not y or sum(y)<=0: raise ValueError('positive aggregate target required')
+    # wape/bias drive the preregistered gate; spearman is reported alongside
+    # because an intrinsic-value model can be informative about ranking even
+    # when market multiples move. Thresholds are unchanged.
     return dict(wape=sum(abs(a-b) for a,b in zip(p,y))/sum(y),
                 bias=sum(a-b for a,b in zip(p,y))/sum(y),
-                log_mae=sum(abs(math.log1p(a)-math.log1p(b)) for a,b in zip(p,y))/len(y))
+                log_mae=sum(abs(math.log1p(a)-math.log1p(b)) for a,b in zip(p,y))/len(y),
+                spearman=spearman(p,y))
 
 def check(manifest, root=ROOT):
     errors=[]; report={}

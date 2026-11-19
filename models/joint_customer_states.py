@@ -6,6 +6,7 @@ maps that mass to Claude revenue; rival/dormant mass earns zero until reacquisit
 """
 import numpy as np
 from .customer_markov import *
+from .valuation import EXIT_HAZARD
 
 VENDORS=('claude_only','multi_with_claude','openai','google','self_hosted','other','none')
 HEALTH=('distressed','funded_unprofitable','self_sustaining')
@@ -95,7 +96,7 @@ def propagate(x,K,vs):
     x=np.einsum('idqv,ivw->idqw',x,vs)
     return (x.reshape(72,7).T@K).T.reshape(8,3,3,7)
 
-def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None,scenario_overrides=None,profile=None,growth_half_life=None,seed_hazards=None,seed_cif=None,accounting=None):
+def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None,scenario_overrides=None,profile=None,growth_half_life=None,seed_hazards=None,seed_cif=None,accounting=None,input_overrides=None,cost_half_life=3.0):
     if growth_half_life is not None and growth_half_life<=0: raise ValueError('positive half life required')
     if profile is not None and (o is None or scenario_overrides is not None or seed_hazards is not None or seed_cif is not None):
         raise ValueError('company profile requires explicit company observations and scenario')
@@ -108,6 +109,10 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
     if scenario_overrides:
         if set(scenario_overrides)-set(p): raise ValueError('unknown scenario parameter')
         p.update(scenario_overrides)
+    if input_overrides:
+        if profile is not None: raise ValueError('input overrides apply to the Anthropic run only')
+        if set(input_overrides)-set(a): raise ValueError('unknown input parameter')
+        a=dict(a); a.update(input_overrides)
     if profile is not None:
         # No Anthropic defaults for a foreign company. An explicitly incomplete
         # profile must fail rather than silently borrow Claude's parameters.
@@ -124,6 +129,13 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
         api=o['run_rate']*o['consumption_9m26']/o['revenue_9m26']; sub=o['run_rate']-api; personal0=sub*p['personal']
         init=lambda v:initial_tensor(v,competition,health)
     personal_raw=personal0
+    # Cost path: start from the reported nine-month accrual ratios and converge to
+    # the scenario's steady-state ratios with half-life cost_half_life (years).
+    # 3 years is the development estimate from 18 cloud-software margin paths
+    # (evaluation/margin_development.py); None = jump to scenario ratios at t=1
+    # (pre-2026-11-19 behaviour). Historical company profiles are unaffected.
+    from .valuation import cost_ratios
+    anthropic_costs=profile is None and accounting is None
     earn=reward if profile is None else profile['reward']
     growth=MACRO_GROW if profile is None else profile['macro_growth']
     trial=init([api*v*p['trial'] for v in w]); live=init([api*v*(1-p['trial']) for v in w]); seats=init([(sub-personal0)*v for v in w])
@@ -155,8 +167,10 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
         scale=min(1,cap/ent) if ent else 1
         # Proportional scaling applies to retained opportunity mass too.
         live*=scale; trial*=scale; seats*=scale
-        revenue=earn(live+trial+seats)+personal; compute=max(commitment_floor(t,o) if profile is None else profile['commitment_floor'](t),revenue*p['cost_ratio'])
-        pretax=revenue-compute-revenue*(p['other_ratio']+p['capex']); fcf=pretax-.25*max(0,pretax)
+        floor_t=commitment_floor(t,o) if profile is None else profile['commitment_floor'](t)
+        c_t,o_t,x_t=cost_ratios(p,t,cost_half_life if anthropic_costs else None)
+        revenue=earn(live+trial+seats)+personal; compute=max(floor_t,revenue*c_t)
+        pretax=revenue-compute-revenue*(o_t+x_t); fcf=pretax-.25*max(0,pretax)
         accounting_trace={}
         if accounting is not None:
             from .accounting import cashflow, ratios
@@ -168,9 +182,14 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
             fcf=profile['cashflow'](revenue,t)
         rows.append(dict(year=t,revenue=revenue,fcf=fcf,regime=reg,vendor_mass=(live+trial+seats).sum(axis=(0,1,2)).tolist(),
                          price_factor=1-(1-p['price'])*fade,volume_factor=1+(p['volume']-1)*fade,
-                         pilot_conversion=p['conversion'],compute_cost=compute,capex=accounting_trace.get('capex',revenue*p['capex']),accounting=accounting_trace,
+                         pilot_conversion=p['conversion'],compute_cost=compute,capex=accounting_trace.get('capex',revenue*x_t),cost_ratios=(c_t,o_t,x_t),accounting=accounting_trace,
                          personal_revenue=personal,enterprise_revenue=earn(live+trial+seats),
-                         enterprise_ceiling=cap,ceiling_binding=scale<1-1e-10))
+                         enterprise_ceiling=cap,ceiling_binding=scale<1-1e-10,
+                         # Diagnostics only: commitments are a cash floor and do NOT
+                         # create demand, so no revenue is credited to idle capacity.
+                         commitment_floor=floor_t,
+                         commitment_implied_revenue=floor_t/c_t if c_t>0 else float('inf'),
+                         idle_commitment_cost=max(0.,floor_t-revenue*c_t)))
     tail_p=dict(p)
     if accounting is not None:
         # Tail margins already include D&A/CapEx; use the consistent cash compute
@@ -180,14 +199,46 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
     ev=sum(x['fcf']/(1+p['wacc'])**x['year'] for x in rows)+tail
     return rows,ev,ev+o['proforma_cash']-o['proforma_convertibles']
 
-def simulate(name='base',n=256,seed=42):
+BLEND_INPUTS=('growth','capture','replacement','personal_ratio')
+
+def initial_capture(o=None,name='base'):
+    o=observations() if o is None else o; p=SCENARIOS[name]
+    api=o['run_rate']*o['consumption_9m26']/o['revenue_9m26']; sub=o['run_rate']-api
+    return (api+sub*(1-p['personal']))/MENLO_DEPLOYMENT
+
+def draw_parameters(z,o=None):
+    """Common-factor interpolation between base and bear (z<0) or bull (z>0).
+
+    Same convention as valuation.monte_carlo: one factor moves every scenario
+    parameter together, so this is a wide (comonotone) stress band, not an
+    estimated joint posterior. Kernel-level PARAM values stay at base.
+    """
+    side='bull' if z>=0 else 'bear'; w=abs(z)
+    scen={k:v+(SCENARIOS[side][k]-v)*w for k,v in SCENARIOS['base'].items() if isinstance(v,(int,float))}
+    scen['exit']=EXIT_HAZARD['base']+(EXIT_HAZARD[side]-EXIT_HAZARD['base'])*w
+    c0=initial_capture(o)
+    val=lambda n,k: (c0 if INPUTS[n][k] is None else INPUTS[n][k])
+    inp={k:val('base',k)+(val(side,k)-val('base',k))*w for k in BLEND_INPUTS}
+    return scen,inp
+
+def simulate(name='base',n=256,seed=42,parameters=True):
+    """Macro regime paths, plus (default) scenario-parameter uncertainty.
+
+    parameters=False reproduces the former macro-only distribution, which
+    understated dispersion (P5-P95 110-187 vs. bear/bull -204/1012).
+    """
     rng=np.random.default_rng(seed); equity=[]
     for _ in range(n):
         path=[]; current=1
         for t in range(10):
             current=int(rng.choice(3,p=MACRO[current])); path.append(current)
-        equity.append(forecast_joint(name,path)[2])
-    return dict(mean=float(np.mean(equity)),p05=float(np.quantile(equity,.05)),median=float(np.median(equity)),p95=float(np.quantile(equity,.95)),negative=float(np.mean(np.array(equity)<0)))
+        if parameters:
+            z=float(rng.triangular(-1,0,1)); scen,inp=draw_parameters(z)
+            equity.append(forecast_joint(name,path,scenario_overrides=scen,input_overrides=inp)[2])
+        else:
+            equity.append(forecast_joint(name,path)[2])
+    e=np.array(equity)
+    return dict(mean=float(e.mean()),p05=float(np.quantile(e,.05)),median=float(np.median(e)),p95=float(np.quantile(e,.95)),negative=float(np.mean(e<0)))
 
 if __name__=='__main__':
     for n in INPUTS:

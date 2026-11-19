@@ -46,8 +46,8 @@ class TestModels(unittest.TestCase):
     def test_lifecycle_exit(self):
         p=SCENARIOS['base']; o=observations()
         _,tail=lifecycle_tail(100,p,o)
-        self.assertAlmostEqual(tail[-1]['alive'],(1-p['exit'])**20)
-        self.assertEqual(tail[-1]['year'],30)
+        self.assertAlmostEqual(tail[-2]["alive"],(1-p["exit"])**20)
+        self.assertEqual(tail[-2]["year"],30); self.assertEqual(tail[-1]["year"],"continuation")
 
 if __name__=="__main__":
     unittest.main()

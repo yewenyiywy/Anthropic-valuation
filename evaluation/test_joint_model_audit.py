@@ -15,4 +15,4 @@ class TestJointAudit(unittest.TestCase):
         p,t=train(); r=vintage()[0]
         self.assertNotEqual(predict(r,p,t)['equity5'],predict(dict(r,operating_income20='0'),p,t)['equity5'])
     def test_engine_default_unchanged(self):
-        self.assertAlmostEqual(forecast_joint()[2],187.05,places=1)
+        self.assertAlmostEqual(forecast_joint()[2],249.22,places=1)

@@ -37,6 +37,9 @@ def sector_budget(t, growth_multiplier=1):
 def enterprise_cap(t, growth_multiplier, terminal_capture, initial_capture):
     # Effective capture includes geography, netting upstream/downstream spend,
     # vendor share and price effects; scenario, NOT an observed market share.
+    # terminal_capture=None holds the observed starting capture (no assumed share
+    # change). The former base value 0.30 silently implied a fall from ~41%.
+    if terminal_capture is None: terminal_capture=initial_capture
     capture=initial_capture+(terminal_capture-initial_capture)*min(t/10,1)
     return sum(sector_budget(t,growth_multiplier).values())*capture
 
@@ -47,7 +50,7 @@ def run():
     # Transferring the historical distress share to the large-company delisting
     # rate is an explicitly cross-sample proxy, not a fitted company hazard.
     proxy=annual_probability(LARGE_DELIST_5Y,5)*DISTRESS_EXIT_FRACTION
-    for name,mult,capture,exit_p,ratio in zip(SCENARIOS,(.7,1,1.5),(.15,.30,.50),
+    for name,mult,capture,exit_p,ratio in zip(SCENARIOS,(.7,1,1.5),(.15,None,.50),  # base holds observed capture
             (annual_probability(LARGE_DELIST_5Y,5),proxy,LARGE_US_FAILURE),(.05,.15,.30)):
         p=dict(SCENARIOS[name],exit=exit_p)
         cap=lambda t: enterprise_cap(t,mult,capture,initial)

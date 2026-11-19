@@ -1,0 +1,38 @@
+{
+  "status": "frozen before stage-4 margin labels were opened; labels not accessed by this code",
+  "selected": "leverage",
+  "development": {
+    "hold": {
+      "loo_mae_pp": 9.637514773582936,
+      "loo_bias_pp": -8.229087296836244,
+      "theta_all": null
+    },
+    "fade15": {
+      "loo_mae_pp": 11.124499373209641,
+      "loo_bias_pp": -10.865364630447198,
+      "theta_all": null
+    },
+    "pooled": {
+      "loo_mae_pp": 9.277620812305425,
+      "loo_bias_pp": -0.26158629240116854,
+      "theta_all": 0.27812439442090275
+    },
+    "converge": {
+      "loo_mae_pp": 8.560093486910676,
+      "loo_bias_pp": 1.3435277757296007,
+      "theta_all": 0.362
+    },
+    "leverage": {
+      "loo_mae_pp": 4.942612742628689,
+      "loo_bias_pp": 2.530760749299143,
+      "theta_all": 0.376
+    }
+  },
+  "sha256": {
+    "stage4_margin_predictions.csv": "ba22693677c402b5f9c275def53ed03aa4420675c2eb3815e52a9032dcc3e852",
+    "stage4_origin_inputs.csv": "9af4d6ec99d95ec20e527623839c3504b30b0ddc53dd7b8b75991fda15380179",
+    "margin_dev_panel.csv": "a568d2c4af1d7e061b1405a0ae9550cc1d0d96aaac43d28ff989f4a1c434802d",
+    "stage4_margin_preregistration.md": "d05bb09e54f7cc64f8bcf55d5ef8d1c343cb7d9e5cc2849f24a7c9a5b7c2b45c",
+    "margin_path.py": "f05386875e643de551ac53897ea771bafe9343dd0069f1601d6c446202f3a6a9"
+  }
+}

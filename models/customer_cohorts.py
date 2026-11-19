@@ -4,14 +4,14 @@ All USD billions. Customer revenue weights and revenue-weighted cancellation
 rates are scenario assumptions, NOT estimated from published customer counts.
 """
 import csv
-from .valuation import ROOT, SCENARIOS, observations, commitment_floor, lifecycle_tail, overlap_factor
+from .valuation import ROOT, SCENARIOS, observations, commitment_floor, lifecycle_tail, overlap_factor, cost_ratios
 from .industry_calibration import enterprise_cap, MENLO_DEPLOYMENT, annual_probability, LARGE_DELIST_5Y, DISTRESS_EXIT_FRACTION, LARGE_US_FAILURE
 from .netflix_benchmark import benchmark
 
 GROUPS=('early_startup','scaleup','mature_sme','large')
 INPUTS={
  'bear':dict(weights=(.30,.30,.25,.15), churn_factors=(1,.8,.65,.35), growth=.7,capture=.15,personal_ratio=.05,replacement=.5),
- 'base':dict(weights=(.15,.25,.30,.30), churn_factors=(.8,.55,.45,.20), growth=1,capture=.30,personal_ratio=.15,replacement=1),
+ 'base':dict(weights=(.15,.25,.30,.30), churn_factors=(.8,.55,.45,.20), growth=1,capture=None,personal_ratio=.15,replacement=1),
  'bull':dict(weights=(.05,.15,.30,.50), churn_factors=(.5,.35,.25,.10), growth=1.5,capture=.50,personal_ratio=.30,replacement=1.25),
 }
 
@@ -88,8 +88,9 @@ def forecast_cohorts(name, o=None, no_commercial_loss=False, top5_cut=0):
             trial=[x*shock_scale for x in trial]; live=[x*shock_scale for x in live]; seats=[x*shock_scale for x in seats]
         group=[trial[i]+live[i]+seats[i] for i in range(4)]
         revenue=sum(group)+personal
-        compute=max(commitment_floor(t,o),revenue*p['cost_ratio'])
-        pretax=revenue-compute-revenue*(p['other_ratio']+p['capex'])
+        c_t,o_t,x_t=cost_ratios(p,t)
+        compute=max(commitment_floor(t,o),revenue*c_t)
+        pretax=revenue-compute-revenue*(o_t+x_t)
         fcf=pretax-.25*max(0,pretax)
         rows.append(dict(year=t,revenue=revenue,personal=personal,enterprise=sum(group),group=dict(zip(GROUPS,group)),
                          losses=losses,new=new_api+new_seats,cap=cap,fcf=fcf))
