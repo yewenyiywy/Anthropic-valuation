@@ -566,6 +566,42 @@ The primary model fails to generalize; saturation improves weighted error but fl
 
 [Data and filing links](data/dotcom_external_cohort.csv) · [Reproduction](evaluation/external_validation.py)
 
+#### Competing exits and acquisition scope
+
+Estimate separate standalone, bankruptcy and merger endpoint probabilities from the original ten issuers (8/1/1) with a symmetric Dirichlet(0.5) prior. The annual constant-hazard matrix reproduces the five-year cumulative probabilities. Recovery or merger consideration is not assumed zero. The valuation expression is an extension specification, not an identified Anthropic hazard or implemented change to base DCF.
+
+$
+\widehat p_k=\frac{n_k+1/2}{N+3/2},\quad s=\widehat p_S^{1/5},\quad q_k=(1-s)\frac{\widehat p_k}{1-\widehat p_S}
+$
+
+$
+P=\begin{pmatrix}s&q_B&q_M\\0&1&0\\0&0&1\end{pmatrix}
+$
+
+$
+V_0=\mathbb E\left[\sum_{t=1}^{\min(T,\tau)}\frac{FCFF_t}{(1+r)^t}+\frac{L_\tau\mathbf1_{\tau\le T}}{(1+r)^\tau}\right]
+$
+
+$
+R_t=R_t^{organic}+R_t^{acquired}-R_t^{disposed}
+$
+
+$
+\Delta NPV=p_{close}\left(\sum_{t=1}^{H}\frac{\Delta FCFF_t}{(1+r)^t}-C_{deal}\right)
+$
+
+| Five-year state | Posterior mean | External observed |
+|---|---:|---:|
+| Standalone | 73.91% | 75% |
+| Bankruptcy | 13.04% | 12.5% |
+| Merger | 13.04% | 12.5% |
+
+External multiclass Brier score 0.406 versus 0.500 always standalone and 0.667 uniform; log loss 0.736 versus 1.099 uniform. Marginal 95% posterior intervals for both exits around 1–37%; the external cohort was previously inspected, so this is retrospective, not a fresh independent test. The model is pooled, not issuer-specific.
+
+Revenue scope audit: PayPal accounted for 20.21% of eBay's 2003 revenue; Jamba accounted for 15.50% of VeriSign's 2004 revenue. Removing Jamba alone reduces VeriSign saturation APE from 84.19% to 81.28%, so acquisitions explain only part of the miss. Yahoo's US incremental acquisition revenues are a different metric and are not pooled with segment revenue. Ex-component revenue is not complete organic revenue. Future deal probabilities, prices and costs must be estimated separately; disclosed realized acquisitions cannot be fed into an earlier forecast. Negative NPV deals reduce value. No validated equity estimate change.
+
+[Exit evidence](data/dotcom_exit_events.csv) · [Acquisition evidence](data/dotcom_acquisition_components.csv) · [Model](evaluation/competing_risk.py)
+
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
 The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
@@ -601,7 +637,7 @@ These are mean equity residuals ($B), not validated fair-value estimates. Expens
 
 ## 9. Reproduction and data
 
-44 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+47 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
@@ -610,6 +646,7 @@ python -m evaluation.five_year
 python -m evaluation.growth_comparison
 python -m evaluation.fundamental_growth
 python -m evaluation.external_validation
+python -m evaluation.competing_risk
 python -m unittest discover -s evaluation -v
 ```
 
