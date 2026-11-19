@@ -16,7 +16,11 @@ COMPONENTS = frozenset(('revenue','customer_states','retention','acquisition',
     'depreciation','capex','working_capital','sbc','cash','debt','leases',
     'commitments','wacc','issuer_lifecycle'))
 ARTIFACTS = frozenset(('preregistration','provenance','splits','predictions',
-    'labels','parameters','training_log','review','freeze_attestation','engine'))
+    'labels','parameters','training_log','review','freeze_attestation','engine',
+    'model_contract','execution_trace'))
+MECHANISMS = frozenset(('customer_birth','customer_survival','retention','pilot_conversion',
+    'vendor_competition','billing_exclusion','demand_ceiling','price_volume',
+    'commitment_floor','cashflow','issuer_lifecycle'))
 EXPOSED = frozenset(('adobe','salesforce','paypal','servicenow','shopify',
     'cisco','aol','yahoo','amazon','ebay','excite@home','pets.com','broadcom',
     'juniper networks','internet capital group','priceline','broadvision',
@@ -60,6 +64,7 @@ def check(manifest, root=ROOT):
         require(manifest['target']==PRIMARY_TARGET,'wrong primary target')
         require(manifest['model_entrypoint']=='models.joint_customer_states.forecast_joint','wrong engine')
         require(manifest['model_scope']=='full_company_profile','surrogate model forbidden')
+        require(manifest['evidence_tier']=='observed_historical','imputed or synthetic tier cannot qualify for observed release')
         require(manifest['training_objective']=='equity_log1p_mae','equity objective required')
         require(manifest['source_fingerprint']==source_fingerprint(root),'source tree hash mismatch')
         require(manifest['horizon_years']==5,'wrong horizon')
@@ -79,6 +84,10 @@ def check(manifest, root=ROOT):
         if errors: return dict(status='BLOCKED',errors=errors)
         splits=read_csv(files['splits']); prov=read_csv(files['provenance'])
         preds=read_csv(files['predictions']); labels=read_csv(files['labels'])
+        contract=json.loads(files['model_contract'].read_text())
+        require(contract['entrypoint']==manifest['model_entrypoint'],'contract entrypoint mismatch')
+        require(contract['source_fingerprint']==manifest['source_fingerprint'],'contract source mismatch')
+        require(set(contract['mechanisms'])==MECHANISMS,'incomplete production architecture contract')
         ids=[r['sample_id'] for r in splits]
         require(len(ids)==len(set(ids)), 'duplicate sample IDs')
         groups={k:[r for r in splits if r['split']==k] for k in ('train','validation','test')}
@@ -109,6 +118,22 @@ def check(manifest, root=ROOT):
             require(r['status']=='verified' and r['source'].startswith('https://') and r['reconciliation'].strip() and r['document_section'].strip() and r['units'].strip(),'unverified component: '+str(key))
         for sid in ids:
             require(COMPONENTS<={c for i,c in seen if i==sid},'incomplete company profile: '+sid)
+        # Structural evidence, not proof that a claimed trace was genuinely executed.
+        # Independent review must authenticate trace and verify actual outputs/ablations.
+        trace=read_csv(files['execution_trace']); traced=set()
+        for r in trace:
+            key=(r['sample_id'],r['mechanism'])
+            require(key not in traced,'duplicate execution trace')
+            traced.add(key)
+            require(r['sample_id'] in set(ids)|{'anthropic_application'},'unknown trace issuer')
+            require(r['mechanism'] in MECHANISMS,'unknown mechanism')
+            require(r['status'] in ('active','evidence_supported_structural_zero'),'disabled or neutralized mechanism: '+str(key))
+            require(r['architecture_sha256']==sha(files['model_contract']),'architecture trace mismatch')
+            require(r['checkpoint_sha256']==sha(files['parameters']),'checkpoint trace mismatch')
+            require(bool(r['trace_evidence'].strip()) and bool(r['input_evidence'].strip()) and bool(r['ablation_evidence'].strip()),'missing mechanism evidence: '+str(key))
+            if r['status']=='evidence_supported_structural_zero':
+                require(r['structural_zero_source'].startswith('https://'),'unjustified structural zero: '+str(key))
+        require(traced=={(sid,c) for sid in ids+['anthropic_application'] for c in MECHANISMS},'incomplete production execution trace')
         expected={r['sample_id'] for r in groups['test']}
         require(len(preds)==len(expected) and {r['sample_id'] for r in preds}==expected,'prediction coverage mismatch')
         require(len(labels)==len(expected) and {r['sample_id'] for r in labels}==expected,'label coverage mismatch')
@@ -137,13 +162,12 @@ def check(manifest, root=ROOT):
     return dict(status='BLOCKED' if errors else 'GATE_PASS_REQUIRES_AUTHENTICATED_REVIEW',errors=errors,scores=report)
 
 def audit():
-    from evaluation.joint_model_audit import evaluate
-    r=evaluate()
-    return dict(status='BLOCKED',scope=r['status'],scores=r['scores'],
-                blockers=['no independent untouched final test','no equity-loss training',
-                          'no complete company profiles','cash flow target definitions differ',
-                          'no frozen release manifest or independent review',
-                          'equity WAPE exceeds release threshold'],missing=r['missing'])
+    # Do not run legacy aggregate surrogates as the production audit.
+    return dict(status='BLOCKED',scope='production model not yet evaluated',scores={},
+                blockers=['no independent untouched final test','no full-model equity-loss training',
+                          'no complete observed or validated reconstructed company profiles',
+                          'no production architecture contract and execution trace',
+                          'no frozen release manifest or independent review'])
 
 def main():
     parser=argparse.ArgumentParser()
