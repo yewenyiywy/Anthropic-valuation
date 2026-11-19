@@ -602,6 +602,43 @@ Revenue scope audit: PayPal accounted for 20.21% of eBay's 2003 revenue; Jamba a
 
 [Exit evidence](data/dotcom_exit_events.csv) · [Acquisition evidence](data/dotcom_acquisition_components.csv) · [Model](evaluation/competing_risk.py)
 
+#### Financial factors and covariance regularization
+
+Features: 1999 log revenue, clipped 1998–99 log growth, gross margin, operating cash flow/revenue. Coverage among 16 inputs: 16/14/11/8. Missing/partial-year values are training-fold median-imputed; annualized liquidity is not used because comparable cash-only values are insufficient. Retrospective restatements remain. Correlations in the imputed original cohort: size/growth −0.825, gross/CFO margin +0.671. VIF 3.41/3.55/1.88/1.98. Covariance is not itself a defect: compare Ridge, shrink-whitening, PCA regression and ordered residualization; projection is training-only and orthogonal in training, not necessarily in new regimes. Hyperparameters and method selection use nested issuer folds on 2000–03 only, with equal issuer weights. No 2004 endpoint training. Prior external cohort was inspected; these are retrospective diagnostic comparisons.
+
+$
+z_{ij}=(x_{ij}-\mu_j)/\sigma_j,\qquad C=Z^\top Z/n
+$
+
+$
+C_\alpha=(1-\alpha)C+\alpha I,\qquad \widetilde Z=Z C_\alpha^{-1/2}
+$
+
+$
+z_j^\perp=z_j-Z_{<j}(Z_{<j}^\top Z_{<j})^+Z_{<j}^\top z_j
+$
+
+$
+\widehat\beta=\arg\min_\beta\sum_i w_i(y_i-X_i\beta)^2+\lambda\|\beta_F\|_2^2
+$
+
+$
+\widehat R_{it}=R^{sat}_{it}\exp\left[(1-2^{-t})(b_0+z_i^\perp b)\right]
+$
+
+| Model | Original MAPE | Original WAPE | External MAPE | External WAPE |
+|---|---:|---:|---:|---:|
+| OLS | 63.62% | 63.95% | 643.21% | 317.98% |
+| Ridge | 67.68% | 62.00% | 289.60% | 138.37% |
+| Covariance shrinkage | 57.85% | 32.65% | 213.92% | 116.94% |
+| PCR | 67.05% | 35.08% | 147.66% | 89.91% |
+| Orthogonal residuals | 52.27% | 18.62% | 227.48% | 123.28% |
+| Saturation | 76.48% | 41.08% | 71.75% | 60.21% |
+| Anchored residual correction | 78.41% | 50.96% | 84.68% | 63.45% |
+| Nested method selection | 64.77% | 36.41% | 227.48% | 123.28% |
+
+Orthogonal residuals improve original WAPE but fail externally; anchored correction is less unstable but does not beat uncorrected saturation. Do not deploy factor coefficients to Anthropic. Cash runway, debt maturity, concentration, share and price need comparable historical and Anthropic-specific inputs before estimation. No change to valuation. [Financial data](data/dotcom_cash_factors.csv) · [Code](evaluation/covariance_factors.py)
+
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
 The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
@@ -637,7 +674,7 @@ These are mean equity residuals ($B), not validated fair-value estimates. Expens
 
 ## 9. Reproduction and data
 
-47 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+50 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
@@ -647,6 +684,7 @@ python -m evaluation.growth_comparison
 python -m evaluation.fundamental_growth
 python -m evaluation.external_validation
 python -m evaluation.competing_risk
+python -m evaluation.covariance_factors
 python -m unittest discover -s evaluation -v
 ```
 
