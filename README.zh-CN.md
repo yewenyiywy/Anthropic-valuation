@@ -548,6 +548,24 @@ Ridge扩展使用初始增长率（非完整财年时中性处理）、公司规
 
 新终点是期限稳健性检验，不是独立公司队列。毛利率未稳定改善收入预测，应在现金流层验证；规模改善金额误差但未稳定改善相对误差。不能据此直接调整Anthropic估值。[复现代码](evaluation/fundamental_growth.py)。
 
+#### 独立公司队列（五年终点）
+
+根据1999年12月同期文章《Internet Stocks, Naughty And Nice》确定八家公司：BroadVision、CMGI、DoubleClick、Exodus、Go2Net、InfoSpace、RealNetworks、VeriSign。仅原十家公司2000—03年数据用于参数拟合；根据旧样本WAPE预先选择规模混合模型。六家有独立2004年收入；Exodus破产、Go2Net被收购，作为删失事件而非零收入。存在会计重述和并购，不是严格时间样本外验证。
+
+| Model | MAPE | WAPE | Within 20% |
+|---|---:|---:|---:|
+| Flat | 57.35% | 69.97% | 16.67% |
+| Original | 161.72% | 94.95% | 0% |
+| Saturation | 71.75% | 60.21% | 33.33% |
+| Recovery | 145.28% | 95.77% | 0% |
+| Size | 206.95% | 115.68% | 16.67% |
+| Blend | 102.22% | 74.16% | 0% |
+| Size blend (primary) | 146.96% | 92.10% | 0% |
+
+旧样本最优模型未能泛化；衰减模型加权误差较小，但零增长基准MAPE更低。不能用这批测试结果重新选模型并声称独立验证。上述是存续条件下收入误差，并非股权估值误差。下一步须区分竞争性退出、内生增长和并购收入，以及独立时间窗口。
+
+[数据及财报来源](data/dotcom_external_cohort.csv) · [复现代码](evaluation/external_validation.py)
+
 ### 8.3 Anthropic 公司披露参数及敏感性
 
 [正式招股书](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm)及[费用披露表](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm)支持[公司特定数据](data/company_specific_anchors.csv)：TTM 消费超过十万美元的客户 11,900+，超过百万美元 1,900+，超过千万美元约 250，第一组贡献 26.1B 收入。收入阈值嵌套，不等于企业生命周期；900% NRR 为特定旧客户群同比季度收入比，排除个人固定订阅，不等于公司未来增长率。
@@ -583,7 +601,7 @@ c_{\mathrm{compute}}=18.808/33.242=56.58\%,\quad c_{\mathrm{other}}=15.694/33.24
 
 ## 9. 复现与数据
 
-42项本地测试通过，含基准嵌套、概率行和、累计晋级、人口守恒、预算边界、初始账单及可复现性。完整估值模型仍未完成样本外验证。主要未识别参数：国家级付费率、真实企业收入权重、资金来源、财务转移、市场捕获及供应商迁移。
+44项本地测试通过，含基准嵌套、概率行和、累计晋级、人口守恒、预算边界、初始账单及可复现性。完整估值模型仍未完成样本外验证。主要未识别参数：国家级付费率、真实企业收入权重、资金来源、财务转移、市场捕获及供应商迁移。
 
 ```bash
 python -m models.joint_customer_states
@@ -591,6 +609,7 @@ python -m evaluation.company_oos
 python -m evaluation.five_year
 python -m evaluation.growth_comparison
 python -m evaluation.fundamental_growth
+python -m evaluation.external_validation
 python -m unittest discover -s evaluation -v
 ```
 
