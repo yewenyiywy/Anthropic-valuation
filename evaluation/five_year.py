@@ -37,6 +37,26 @@ def evaluate(mature_grid=(0,)):
     scores={k:metrics([(r[k],r['actual']) for r in reports]) for k in ('original','half_life','flat','calibrated')}
     return {'rows':reports,'scores':scores,'censored':[r['company'] for r in rows if not r['r2004']]}
 
+def valuation_sensitivity(n=128,seed=42):
+    from models.joint_customer_states import forecast_joint, MACRO
+    from models.valuation import observations
+    from evaluation.company_calibration import anchors
+    a=anchors(); o=observations()
+    o.update(proforma_cash=a['adjusted_cash'],proforma_convertibles=a['adjusted_convertibles'])
+    rng=np.random.default_rng(seed); paths=[]
+    for _ in range(n):
+        k=1; p=[]
+        for t in range(10):
+            k=int(rng.choice(3,p=MACRO[k])); p.append(k)
+        paths.append(p)
+    cost=a['compute_infrastructure']/a['revenue']; other=a['other_opex']/a['revenue']
+    out=[]
+    for h in (None,.5,1,2):
+        for s in ({},{'cost_ratio':cost},{'cost_ratio':cost,'other_ratio':other}):
+            y=np.array([forecast_joint(regime_path=p,o=o,growth_half_life=h,scenario_overrides=s)[2] for p in paths])
+            out.append(dict(half_life=h,cost_overrides=s,mean=float(y.mean()),quantiles=np.quantile(y,[.05,.5,.95]).tolist()))
+    return out
+
 if __name__=='__main__':
     import json
-    print(json.dumps({'base':evaluate(),'mature_growth_extension':evaluate((-.1,0,.1,.2,.3))},indent=2))
+    print(json.dumps({'base':evaluate(),'mature_growth_extension':evaluate((-.1,0,.1,.2,.3)),'valuation_sensitivity':valuation_sensitivity()},indent=2))
