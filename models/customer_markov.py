@@ -26,19 +26,23 @@ def anchors():
     with (ROOT/'data/markov_anchors.csv').open() as f:
         return {r['metric']:float(r['value']) for r in csv.DictReader(f)}
 
-def transition(name, migration=True):
+def transition(name, migration=True, seed_hazards=None, seed_cif=None):
     a=PARAM[name]; h=hazards(); P=[[0.]*9 for _ in range(9)]
+    seed_hazards=[h[0]]*5 if seed_hazards is None else list(seed_hazards)
+    cif=a['seed_cif'] if seed_cif is None else tuple(seed_cif)
+    if len(seed_hazards)!=5 or any(not 0<=x<1 for x in seed_hazards) or len(cif)!=4 or any(not 0<=x<=1 for x in cif) or any(x>y for x,y in zip(cif,cif[1:])):
+        raise ValueError('invalid seed competing risks')
     # Competing risks: incremental cumulative incidence / remaining eligible mass.
     # Bootstrap is a separate competing exit from seed, not a failure.
     risk=1.; previous=0.
     for i in range(5):
-        g=(a['seed_cif'][i]-previous)/risk if i<4 else a['late_grad']
-        b=a['bootstrap']; d=h[0]
+        g=(cif[i]-previous)/risk if i<4 else a['late_grad']
+        b=a['bootstrap']; d=seed_hazards[i]
         if not migration: g=b=0.
         if g+b+d>1: raise ValueError('infeasible competing risks')
         P[i][min(i+1,4)]=1-g-b-d; P[i][5]=g; P[i][6]=b; P[i][8]=d
         if i<4:
-            risk*=1-g-b-d; previous=a['seed_cif'][i]
+            risk*=1-g-b-d; previous=cif[i]
     for i,j,k,x,y in [(5,6,7,a['scale_sme'],a['scale_large']), (6,7,7,a['sme_large'],0), (7,6,6,a['large_down'],0)]:
         if not migration: x=y=0.
         d=h[GROUP[i]]; P[i][i]=1-d-x-y; P[i][j]+=x; P[i][k]+=y; P[i][8]=d
