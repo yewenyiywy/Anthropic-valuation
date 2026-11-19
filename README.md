@@ -501,6 +501,35 @@ g_{i,0}=\operatorname{clip}(\alpha\ln(R_{i,1999}/R_{i,1998}),-c,c),\quad g_{i,t}
 
 Leave out the target issuer entirely and minimize mean absolute log error over other issuers' FY2000–03 outcomes; no FY2004 outcome enters the fit. Five-year MAPE/WAPE 76.48%/41.08%. This is retrospective cross-company transfer and a terminal-year holdout, NOT a 1999-vintage calibration. A mature-growth extension worsens MAPE to 94.52%. The flat baseline remains better on MAPE. [Executable evaluation](evaluation/five_year.py).
 
+#### Alternative growth models
+
+The [model comparison](evaluation/growth_comparison.py) refits each candidate excluding the target issuer and every FY2004 outcome. The previous calibrated model underestimated six of eight issuers. A structural reason is the forced convergence to zero revenue growth, which cannot represent post-bubble demand recovery. Partial-year FY1998 sales and acquisitions further limit comparability. The alternative pooled recovery model uses:
+
+```math
+\ln(\widehat R_{i,t}/R_{i,0})=a(1-2^{-t})+bt
+```
+
+Ridge extensions use initial growth (neutralized for partial-year observations), log size and business-type indicators; Huber IRLS limits outliers. The fixed equal-weight geometric blend of the previous saturation and pooled recovery forecasts is:
+
+```math
+\widehat R_{i,t}^{blend}=\sqrt{\widehat R_{i,t}^{sat}\widehat R_{i,t}^{rec}}
+```
+
+| Model | MAPE | WAPE | Underpredicted |
+|---|---:|---:|---:|
+| Previous saturation | 76.48% | 41.08% | 6/8 |
+| Pooled trend | 110.80% | 191.72% | 2/8 |
+| Pooled recovery | 54.85% | 78.74% | 5/8 |
+| Ridge growth | 123.98% | 60.57% | 2/8 |
+| Ridge sector | 156.61% | 99.96% | 2/8 |
+| Ridge partial-year | 128.08% | 49.61% | 3/8 |
+| Huber recovery | 54.59% | 72.15% | 6/8 |
+| Huber size | 108.82% | 68.02% | 2/8 |
+| Geometric ensemble | 85.18% | 78.11% | 3/8 |
+| Saturation/recovery blend | 59.69% | 39.72% | 5/8 |
+
+Model selection on these same eight endpoints is exploratory; another cohort is required for an unbiased performance estimate. The pooled recovery model is not a company-specific lifecycle calibration and the blend is not a validated valuation model. Do not transplant its coefficients into Anthropic; separately estimate industry adoption, market share, monetization and margins from company-specific evidence.
+
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
 The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
@@ -536,12 +565,13 @@ These are mean equity residuals ($B), not validated fair-value estimates. Expens
 
 ## 9. Reproduction and data
 
-38 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+40 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
 python -m evaluation.company_oos
 python -m evaluation.five_year
+python -m evaluation.growth_comparison
 python -m unittest discover -s evaluation -v
 ```
 
