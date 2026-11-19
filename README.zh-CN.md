@@ -275,6 +275,10 @@ Z_{t}\sim P_Z,\qquad z\sim\mathrm{Tri}(-1,0,1),\qquad \theta(z)=\theta_{\mathrm{
 
 ## 3. 证据与验证
 
+### 3.0 数据来源核对
+
+§3.2–3.4 使用的每个 SEC 数字都有两个来源：原始时点的 XBRL 数据，以及申报原文中印出的数字。共 41 份申报、205 个数，全部完全一致（[核对记录](data/sec_reconciliation.csv)；其中 34 个按百万美元披露，只能核对到这一精度）。每笔收购都有两个独立来源（[事件数据](data/stage4_exit_events.csv)），只有 NetSuite 的股权价值仍依赖单一来源。任何数字未经核对，测试都会失败。
+
 ### 3.1 发布门禁
 
 `python -m evaluation.validation_gate --audit` → **BLOCKED**。发布条件：至少 10 家未暴露的公司、覆盖 2 个技术周期，五年股权 WAPE ≤ 30%，偏差绝对值 ≤ 15%，同时打败"市值不变"和"市销率不变"两个基准，并具备完整公司画像、冻结的预测和独立审核人。[收购终点规则](evaluation/acquisition_endpoint_policy.md)已于 2026-11-19 **获批**并由门禁执行：被收购的公司以成交时股东获得的股权价值为标签，与匹配年限 $k=\max(1,\mathrm{round}(\tau))$ 下的模型股权价值比较，从不按零计。
@@ -367,7 +371,7 @@ Bessemer 2020 年的 5 家公司，以 FY2020 数据为输入，比较 2025 年�
 
 ```bash
 pip install numpy scipy
-python -m unittest discover -s evaluation -p 'test_*.py'   # 123 项测试
+python -m unittest discover -s evaluation -p 'test_*.py'   # 127 项测试
 python -m evaluation.validation_gate --audit
 python -m models.joint_customer_states
 python -m evaluation.reverse_dcf --equity 1200

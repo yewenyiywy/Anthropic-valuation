@@ -275,6 +275,10 @@ One common factor moves every scenario parameter together toward bear ($z<0$) or
 
 ## 3. Evidence and validation
 
+### 3.0 Data provenance
+
+Every SEC figure used in §3.2–3.4 has two sources: original-vintage XBRL, and the figure printed in the filed document. That is 205 values from 41 filings, all matching exactly ([record](data/sec_reconciliation.csv); 34 are reported in USD millions and reconcile only to that rounding). Each acquisition has two independent sources ([events](data/stage4_exit_events.csv)); NetSuite's equity value rests on one. A test fails if any of these figures is unreconciled.
+
 ### 3.1 Release gate
 
 `python -m evaluation.validation_gate --audit` → **BLOCKED**. To release: at least 10 unexposed issuer families across 2 technology cycles, five-year equity WAPE ≤ 30%, absolute bias ≤ 15%, beat flat market cap and constant P/S, full company profiles, frozen predictions and an independent reviewer. The [acquisition endpoint policy](evaluation/acquisition_endpoint_policy.md) was **approved** on 2026-11-19 and is enforced by the gate. An acquired issuer is scored on the equity value paid at close against model equity at the matched horizon $k=\max(1,\mathrm{round}(\tau))$, never as zero.
@@ -367,7 +371,7 @@ The model ranks fundamentals well but not market caps; equity error is mostly mu
 
 ```bash
 pip install numpy scipy
-python -m unittest discover -s evaluation -p 'test_*.py'   # 123 tests
+python -m unittest discover -s evaluation -p 'test_*.py'   # 127 tests
 python -m evaluation.validation_gate --audit
 python -m models.joint_customer_states
 python -m evaluation.reverse_dcf --equity 1200
