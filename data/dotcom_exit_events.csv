@@ -1,0 +1,5 @@
+company,cohort,event,year,source
+AOL,train,merger,2001,https://www.sec.gov/Archives/edgar/data/1105705/000095015701500021/aol-8k.txt
+Excite@Home,train,bankruptcy,2001,https://www.sec.gov/Archives/edgar/data/1020620/000101287001502290/d8k.txt
+Go2Net,external,merger,2000,https://www.sec.gov/Archives/edgar/data/1068875/000103221000002051/0001.txt
+Exodus Communications,external,bankruptcy,2001,https://www.sec.gov/Archives/edgar/data/1013740/000101287001502957/d10qa.txt
