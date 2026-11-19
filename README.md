@@ -49,6 +49,47 @@ Base attribution (USD B equity): previous Netflix-only 180.27; industry only 160
 Sources: [IDC 2024 AI primer](https://info.idc.com/rs/081-ATC-910/images/DA-Market-Primer-AI-and-GenAI.pdf), [Menlo 2026](https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/), [BCG 1975–2025](https://www.bcg.com/publications/2026/why-do-companies-fail-us-failure-rates), [Daepp et al. 2015](https://doi.org/10.1098/rsif.2015.0120), [large UK listed corporations study (also reports historical large-US benchmark)](https://doi.org/10.1080/00076791.2021.1893696).
 
 
+### Latest extension — Customer-type cohort DCF with commercial churn
+
+**Latest conditional base equity: $150.07B.** The older scenarios are retained for attribution. Run `python -m models.customer_cohorts`. The [customer risk register](data/customer_risk.csv) records source-linked observations. Official [customer examples](https://www.anthropic.com/customers) and [IPO fact sheet](https://ipo.anthropic.com/documents/us/factsheet.pdf) identify Lovable, Replit, Ramp, Jane Street, Walmart, SAP and others; marketing examples are not representative and invoices by customer type are undisclosed. Customer type × deployment status × billing is mutually exclusive; pilot and startup are not alternative types.
+
+BLS establishment survival gives annual closure proxies (early information 15.03%, age 5–10 information 8.06%, age 5–10 general 7.27%); large-company distress proxy 0.132% is from the previous extension. PitchBook funding-stage eventual failure is documented but not annualized without a horizon. Ramp January 2026 reports ~4% monthly customer-count cancellation, not revenue loss; annualizing is a constant-rate sensitivity. Base revenue weights early/scale-up/SME/large are 15/25/30/30%, churn transfer factors f are 0.8/0.55/0.45/0.20. They are unknown, assumed. Conditional commercial loss q removes overlap with closure h. The resulting annual retention is 69.0/78.7/82.6/92.3%. The prior market-share multiplier is omitted to avoid counting cancellation twice.
+
+```math
+p_L=1-(1-0.04)^{12}=0.38729
+```
+
+```math
+q_i=\max\left(0,\frac{f_i p_L-h_i}{1-h_i}\right),\qquad s_i=(1-h_i)(1-q_i)
+```
+
+```math
+L_{i,t}=[L_{i,t-1}+T_{i,t-1}p_{\mathrm{GTM}}m_{\mathrm{rollout}}]s_iF_{i,t}K_t+(1-\alpha_t)w_iJ_t
+```
+
+```math
+T_{i,t}=\alpha_t w_iJ_t,\quad \alpha_t=0.1+0.5d_t
+```
+
+```math
+J_t=nd_t\sum_i(L_{i,t-1}+T_{i,t-1})+\rho(1-d_t)\sum_i(L_{i,t-1}+T_{i,t-1})(1-s_i^{\mathrm{plan}})
+```
+
+```math
+E_t=\sum_i(L_{i,t}+T_{i,t}+B_{i,t}^{\mathrm{enterprise}}),\quad R_t=\min(E_t,C_t)+B_t^{\mathrm{personal}}
+```
+
+Here L is production consumption, T trial consumption, F conditional funding/spend multiplier, K conditional token-volume × price, J planned new consumption, d growth fade, and rho maturity replacement (0.5/1/1.25). Employer seats use group retention plus independent subscription growth/new seat acquisition; personal invoices retain Netflix cap and employer substitution. Industry demand cap C applies to enterprise invoices only. New sales remain positive at maturity; new allocation weights and replacement are assumptions. Company failure still applies separately in the finite lifecycle tail. No explicit startup graduation or retained acquisition proceeds are modeled.
+
+| Scenario | Year 1 revenue | Year 5 revenue | Year 10 revenue | EV | Equity residual | Closure-only counterfactual equity |
+|---|---:|---:|---:|---:|---:|---:|
+| Bear | 50.00 | 18.31 | 9.91 | -328.87 | -227.06 | -135.65 |
+| Base | 96.91 | 179.31 | 206.43 | 48.26 | 150.07 | 187.11 |
+| Bull | 115.69 | 396.70 | 622.57 | 831.32 | 933.13 | 995.60 |
+
+Base year-one gross lost spend from existing enterprise customers before expansion/new sales: 12.71B (4.71 closure proxy and 8.00 conditional commercial loss). Incremental top-five spend shock (25% of revenue proxy) after normal attrition: 25%/50%/100% cut -> equity 125.33/100.59/51.10B. Concentration is nine-month historical, not observed October mix. Attribution compares closure-only 187.11B vs 150.07B with commercial loss holding acquisition policy fixed; this is not a fitted causal effect. Actual NRR ~900% Q3 2026 compares prior-year quarterly qualified customers, excluding individual fixed subscriptions; not a logo survival statistic and incompatible with extrapolating the historical growth indefinitely. 16 local tests pass; no forward predictive backtest yet.
+
+
 ## Mathematical valuation methodology
 
 All monetary variables are in **USD billions**, except unit prices. Time $t$ is measured in annual steps from the October 2026 run-rate snapshot. Quantities identified as assumptions are scenario inputs, not estimated facts.
