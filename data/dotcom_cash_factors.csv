@@ -1,0 +1,10 @@
+company,cfo1999,cash1999,gross_margin,source,scope
+Cisco,4.438,,,https://www.cisco.com/c/dam/en_us/about/ac49/ac20/downloads/customer/annualreport/ar99/print/8_Financials.pdf,original fiscal year
+Yahoo,.2163,.9611,,https://www.sec.gov/Archives/edgar/data/1011006/000091205700014598/0000912057-00-014598-d1.html,cash includes marketable debt securities; not used as cash-only factor
+Amazon,-.090875,,,https://www.sec.gov/Archives/edgar/data/1018724/000089102000001638/v65477e10-ka.txt,1999 amended 10-K
+eBay,.0629,,,https://www.sec.gov/Archives/edgar/data/1065088/000109581101001836/f70837e10-k.txt,retrospective CFO
+Broadcom,.109315,.180816,,https://www.sec.gov/Archives/edgar/data/1054374/000089256902000531/a78920e10-k.htm,restated pooling
+Juniper Networks,.0205,,,https://www.sec.gov/Archives/edgar/data/1043604/000089161801000244/f70571ex13-1.txt,retrospective CFO
+BroadVision,,,.750584,https://www.sec.gov/Archives/edgar/vprr/0302/03020458.pdf,86703/115514
+RealNetworks,.048187,,.82863,https://www.sec.gov/Archives/edgar/data/1046327/000089102002000225/v79646e10-k.htm,108751/131242
+VeriSign,.014665,,,https://www.sec.gov/Archives/edgar/data/1014473/000101287002001292/d10k.txt,retrospective CFO
