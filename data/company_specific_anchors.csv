@@ -1,0 +1,13 @@
+company,metric,value,period,kind,source_url
+Anthropic,revenue,33.242,2026-09 nine months,observed,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+Anthropic,consumption,26.3,2026-09 nine months,observed,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+Anthropic,compute_infrastructure,18.808,2026-09 nine months,observed_accrual,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+Anthropic,other_opex,15.694,2026-09 nine months,observed_accrual,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+Anthropic,ttm_revenue_ge100k,26.1,2026-09 TTM,approx_observed,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+Anthropic,customers_ge100k,11900,2026-09 TTM,lower_approx,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+Anthropic,customers_ge1m,1900,2026-09 TTM,lower_approx,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+Anthropic,customers_ge10m,250,2026-09 TTM,approx_observed,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+Anthropic,customers_lt100k,40000000,2026-09 TTM,approx_observed,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+Anthropic,nrr_ex_personal,9,2026-09 Q3 yoy cohort,approx_observed,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+Anthropic,adjusted_cash,232.351,2026-09 pro forma as adjusted,conditional_accounting,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+Anthropic,adjusted_convertibles,109.742,2026-09 pro forma as adjusted,conditional_accounting,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
