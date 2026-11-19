@@ -1,0 +1,10 @@
+metric,value,scope,source_url
+eu_seed_a_12m,0.06,Dealroom 2016-2018 European seed cohort 3075 companies,https://dealroom.co/startup-journey-europe/
+eu_seed_a_24m,0.18,same,https://dealroom.co/startup-journey-europe/
+eu_seed_a_36m,0.27,same,https://dealroom.co/startup-journey-europe/
+eu_seed_a_48m,0.31,same,https://dealroom.co/startup-journey-europe/
+us_seed_a_12m,0.129,Carta Q3 2024 cohort,https://carta.com/data/linkedin-archive/?q=graduation
+us_seed_a_24m,0.327,Carta Q1 2021 cohort different vintage,https://carta.com/data/linkedin-archive/?q=graduation
+us_seed_deals,5049,NVCA 2025 pre-seed and seed deals not unique firms,https://nvca.org/2026-nvca-yearbook/
+us_seed_capital,22.3,NVCA 2025 pre-seed and seed capital USD billions,https://nvca.org/2026-nvca-yearbook/
+young_high_growth,0.08,Census 2020 continuing young firms less than 8 percent high growth not size graduation,https://www.census.gov/data/experimental-data-products/bds-high-growth.html
