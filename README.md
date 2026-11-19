@@ -23,6 +23,14 @@ Research snapshot: 2026-11-19. All amounts are USD billions unless noted.
 
 Negative residuals denote funding distress, not negative share prices. Percentiles describe conditional macro-path uncertainty, not confidence intervals. Capital structure, refinancing, restructuring and parameter estimation remain unresolved.
 
+### Mandatory training and evaluation gate
+
+**Current status: BLOCKED; no validated valuation release.** [Research protocol](MODEL_VALIDATION_PROTOCOL.md) · [Repository instructions](AGENTS.md) · [Reproduced audit](evaluation/current_gate_audit.json) · [Evidence manifest schema](evaluation/RELEASE_MANIFEST_SCHEMA.md).
+
+Chronological issuer-family train/validation/test separation, five-year label-availability embargo, preregistered thresholds, frozen code/parameters/predictions and independent review are required. Revealed cohorts are development diagnostics only. Primary target is five-year equity market capitalization; revenue and cash flow are auxiliary. Project-specific gate: at least ten distinct issuer families across two technology cycles, WAPE <=30%, absolute signed bias <=15%, strictly beat flat capitalization and constant P/S. Machine checks are necessary but not proof of independent custody or source authenticity.
+
+Run `python -m evaluation.validation_gate --audit`; release candidate requires `python -m evaluation.validation_gate --manifest evaluation/release_manifest.json`. 72 local unit tests passed. Current historical diagnostic equity WAPE is 86.98%; complete company profiles, equity-loss training and blind final test are missing.
+
 ## 2. Overarching valuation model
 
 The primary model is an open joint Markov revenue process with duration dependence, latent financial health, common macro regimes, vendor choice, personal demand and finite-horizon DCF. Calculation order: revenue baseline → demand ceilings and customer states → transitions and acquisition → revenue → cash flow → lifecycle continuation → equity.
