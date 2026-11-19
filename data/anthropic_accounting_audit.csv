@@ -1,0 +1,15 @@
+metric,value_usd_b,period,status,source
+revenue,33.242,9m2026,verified,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+consumption_revenue,26.306,9m2026,verified,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+subscription_revenue,6.936,9m2026,verified,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+compute_infrastructure,18.808,9m2026,verified_accrual,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+total_operating_expenses,34.502,9m2026,verified_accrual,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+operating_income,-1.260,9m2026,verified_accrual,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+cfo,6.569,9m2026,verified,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+capex,.925,9m2026,verified,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+lease_prepayments,1.955,9m2026,verified,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+depreciation_amortization,.250,9m2026,verified,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+stock_based_compensation,3.255,9m2026,verified,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+interest_income,2.359,9m2026,verified,https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm
+adjusted_cash,232.351,pro forma,not_reverified_final_prospectus_unavailable,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
+adjusted_convertibles,109.742,pro forma,not_reverified_final_prospectus_unavailable,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm
