@@ -1,8 +1,9 @@
 import csv
+import json
 import tempfile
 import unittest
 from pathlib import Path
-from evaluation.validation_gate import (ARTIFACTS, COMPONENTS, check, sha, score, source_fingerprint,
+from evaluation.validation_gate import (ARTIFACTS, COMPONENTS, MECHANISMS, check, sha, score, source_fingerprint,
     audit, MAX_WAPE, MAX_BIAS, MIN_FAMILIES, MIN_CYCLES)
 
 class TestGate(unittest.TestCase):
@@ -14,6 +15,7 @@ class TestGate(unittest.TestCase):
         self.m=dict(target='equity_market_cap_usd_b',
             model_entrypoint='models.joint_customer_states.forecast_joint',
             model_scope='full_company_profile',training_objective='equity_log1p_mae',
+            evidence_tier='observed_historical',
             horizon_years=5,thresholds=dict(max_wape=MAX_WAPE,max_abs_bias=MAX_BIAS,
                 min_families=MIN_FAMILIES,min_cycles=MIN_CYCLES),
             registered_at='2025-01-01T00:00:00Z',frozen_at='2025-02-01T00:00:00Z',
@@ -40,6 +42,10 @@ class TestGate(unittest.TestCase):
         self.write('splits',self.splits);self.write('provenance',self.prov)
         self.write('predictions',self.preds);self.write('labels',self.labels)
         self.m['source_fingerprint']=source_fingerprint(self.root)
+        self.paths['model_contract'].write_text(json.dumps(dict(entrypoint=self.m['model_entrypoint'],source_fingerprint=self.m['source_fingerprint'],mechanisms=sorted(MECHANISMS))))
+        self.refresh('model_contract')
+        self.traces=[dict(sample_id=sid,mechanism=c,status='active',architecture_sha256=sha(self.paths['model_contract']),checkpoint_sha256=sha(self.paths['parameters']),trace_evidence='fixture',input_evidence='fixture',ablation_evidence='fixture',structural_zero_source='') for sid in [r['sample_id'] for r in self.splits]+['anthropic_application'] for c in MECHANISMS]
+        self.write('execution_trace',self.traces)
 
     def refresh(self,k):
         p=self.paths[k]
@@ -85,6 +91,16 @@ class TestGate(unittest.TestCase):
         self.assertIn('zero not documented wipeout',self.result()['errors'])
     def test_current_audit_blocks(self):
         self.assertEqual(audit()['status'],'BLOCKED')
-        self.assertGreater(audit()['scores']['equity5']['wape'],MAX_WAPE)
+        self.assertEqual(audit()['scores'],{})
+    def test_disabled_mechanism(self):
+        self.traces[0]['status']='neutralized';self.write('execution_trace',self.traces)
+        self.assertEqual(self.result()['status'],'BLOCKED')
+    def test_missing_execution_trace(self):
+        self.write('execution_trace',self.traces[1:]);self.assertIn('incomplete production execution trace',self.result()['errors'])
+    def test_synthetic_tier(self):
+        self.m['evidence_tier']='synthetic';self.assertEqual(self.result()['status'],'BLOCKED')
+    def test_unjustified_zero(self):
+        self.traces[0]['status']='evidence_supported_structural_zero';self.write('execution_trace',self.traces)
+        self.assertEqual(self.result()['status'],'BLOCKED')
     def test_zero_safe(self):
         self.assertEqual(score([0,10],[0,10])['log_mae'],0)
