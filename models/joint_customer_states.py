@@ -110,7 +110,7 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
         # No Anthropic defaults for a foreign company. An explicitly incomplete
         # profile must fail rather than silently borrow Claude's parameters.
         required={'scenario','inputs','birth_share','weights','retention','start','initialize','kernel','vendor','birth_budget','enterprise_cap','personal_cap','reward','macro_growth','health_spend','tail','commitment_floor'}
-        if set(profile)!=required or set(profile['scenario'])!=set(p) or set(profile['inputs'])!=set(a):
+        if not required<=set(profile) or set(profile)-required-{'cashflow'} or set(profile['scenario'])!=set(p) or set(profile['inputs'])!=set(a):
             raise ValueError('incomplete company profile; no cross-company default allowed')
         p=dict(profile['scenario']); a=dict(profile['inputs']); b={'birth_share':profile['birth_share']}
         w=profile['weights']; r=profile['retention']; api,sub,personal0=profile['start']; init=profile['initialize']
@@ -155,6 +155,8 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
         live*=scale; trial*=scale; seats*=scale
         revenue=earn(live+trial+seats)+personal; compute=max(commitment_floor(t,o) if profile is None else profile['commitment_floor'](t),revenue*p['cost_ratio'])
         pretax=revenue-compute-revenue*(p['other_ratio']+p['capex']); fcf=pretax-.25*max(0,pretax)
+        if profile is not None and 'cashflow' in profile:
+            fcf=profile['cashflow'](revenue,t)
         rows.append(dict(year=t,revenue=revenue,fcf=fcf,regime=reg,vendor_mass=(live+trial+seats).sum(axis=(0,1,2)).tolist()))
     tail,_=lifecycle_tail(rows[-1]['revenue'],p,o) if profile is None else profile['tail'](rows[-1]['revenue'],p,o)
     ev=sum(x['fcf']/(1+p['wacc'])**x['year'] for x in rows)+tail
