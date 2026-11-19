@@ -30,7 +30,54 @@ NWC, SBC, cash, debt, lease liabilities, funding and legal entities. Never equat
 CFO-CapEx with FCFF. Track observed/estimated/proxy/missing status and uncertainty
 for every parameter. Customer states, churn, vendor switching, price/volume,
 acquisition, competition and commitments require company-specific evidence.
-Missing states block full validation; aggregate restrictions are diagnostics.
+Missing states trigger the reconstruction procedure below; aggregate restrictions
+are not eligible training data or performance evidence for the production model.
+
+### 1A. Model identity and missing-data contract (mandatory)
+
+Before any numerical fitting, freeze a production model contract defining the
+entrypoint, component list, state dimensions and transitions, customer birth,
+survival, retention, pilot conversion, competition, mutually exclusive billing,
+demand ceilings, pricing, commitments, cash-flow and lifecycle continuation.
+Use exactly this architecture for Anthropic and every historical company; only
+company-specific input distributions and trained parameters may change. A call
+to the same entrypoint with identity transition matrices, disabled births,
+infinite ceilings, neutral competition or a replacement cash-flow callback is
+not proof of identity. Zero or identity values must be independently justified
+by issuer evidence, never used as placeholders to bypass a missing mechanism.
+If a new architecture removes a mechanism, revise the production model itself,
+document the economic justification and restart preregistration; do not remove
+it for historical tests only.
+
+Apply the following sequence before training or evaluation:
+
+1. Obtain dated issuer-specific reports, customer metrics and original filings;
+   reconcile independently. Record observed versus unobserved fields and masks.
+2. Reconstruct indirect states from origin-known evidence using identifiable
+   constraints (revenue reconciliation, churn/cohort disclosures, market shares,
+   downstream customer population). Use a likelihood or prior with uncertainty,
+   not arbitrary point constants. Validate reconstruction on firms with observed
+   states by masking them and comparing reconstructed distributions to truth.
+3. If incomplete, use multiple stochastic imputations/posterior draws trained
+   only on earlier development issuers inside each fold. Freeze the generator,
+   feature availability, priors, seed, diagnostics and sensitivity bounds before
+   evaluation; propagate imputation uncertainty through the intact engine. Never
+   condition generated inputs on future realized revenue, cash flow or equity.
+4. Fully synthetic firms/labels are simulation, recovery and stress tests only;
+   they do not contribute to historical WAPE or empirical release claims.
+   Imputed inputs paired with genuine historical labels are a separate empirical
+   tier, not fully observed backtests. Report observed-only and imputed separately.
+5. If reconstruction cannot be validated or states remain unidentified, stop
+   the claimed production evaluation. Seek better-observed cohorts using an
+   origin-known eligibility rule; register the entire universe, exclusions and
+   missingness including failed/merged firms. No survivor-only cherry-picking.
+
+Capture per-company execution evidence: frozen input/checkpoint hashes, active
+component and state traces, mechanism-level ablations, state/revenue accounting,
+finite constraints, and provenance for any structural zero. Verify the
+historical and Anthropic traces against the same contract. Legacy aggregate
+joint-engine experiments are archived as surrogate diagnostics only. Their
+losses must not train, calibrate, select or validate the production model.
 
 ## 2. Training / 参数训练
 
@@ -56,8 +103,9 @@ Compare flat market cap and constant P/S using only origin-known inputs.
 ## 3. Post-training / 独立评测
 
 Freeze exact production code and fitted parameters before independent scoring.
-Run the same joint engine and same state/cashflow/continuation logic used for
-Anthropic, with only evidence-based company profiles. Evaluate five-year revenue,
+Run the identical frozen production architecture with every applicable mechanism
+active, using evidence-based company profiles under section 1A. An entrypoint
+name alone is insufficient; independently review trace evidence. Evaluate five-year revenue,
 FCFF (matched definition), equity market cap and survival separately; report
 WAPE, signed bias, zero-safe log error, coverage, subgroup results, and uncertainty.
 Run baseline comparisons, ablations, residual/covariance checks, regime and
