@@ -639,6 +639,44 @@ $
 
 Orthogonal residuals improve original WAPE but fail externally; anchored correction is less unstable but does not beat uncorrected saturation. Do not deploy factor coefficients to Anthropic. Cash runway, debt maturity, concentration, share and price need comparable historical and Anthropic-specific inputs before estimation. No change to valuation. [Financial data](data/dotcom_cash_factors.csv) · [Code](evaluation/covariance_factors.py)
 
+#### Capital intensity, development expenditure and liquidity
+
+Add historical capex/revenue, development/revenue (not measured R&D efficiency), cash equivalents/revenue and inverse runway proxy. Coverage 10/10/8/8 of 16; CFO coverage now 10. Four issuers disclose whether a customer is at least 10%; record but do not fit due to insufficient coverage. No inferred debt, market share or elasticity. Amazon technology/content is broader than R&D; accounting scopes differ. Group ablation uses training-only median-free observed mean scaling, missing standardized signals zero, covariance shrink whitening and coverage weights; nested issuer folds choose ridge and whitening parameters using 2000–03 only. The one-standard-error rule is a conservative heuristic, not a formal confidence interval. Previously inspected external cohort is diagnostic.
+
+$
+x_{\mathrm{capex}}=\frac{Capex}{R},\quad x_{\mathrm{dev}}=\frac{Development}{R},\quad x_{\mathrm{cash}}=\log(1+Cash/R)
+$
+
+$
+x_{\mathrm{burn}}=\log\left(1+\frac{\max(0,Capex-CFO)}{Cash}\right)
+$
+
+$
+Z^*=Z[(1-\alpha)C+\alpha I]^{-1/2}D,\quad D_{jj}=\sqrt{coverage_j}\mathbf1_{coverage_j\ge0.5}
+$
+
+$
+\widehat R_{it}=R^{sat}_{it}\exp\left[\operatorname{clip}((1-2^{-t})Z_i^*\widehat\beta,-1,1)\right]
+$
+
+$
+\widehat M=\arg\min_{M: L_M\le L_{best}+SE_{best}}d_M
+$
+
+| Model | Original WAPE | External WAPE |
+|---|---:|---:|
+| Saturation | 41.08% | 60.21% |
+| Baseline factors | 47.72% | 72.14% |
+| Investment | 41.25% | 60.18% |
+| Liquidity | 48.58% | 66.40% |
+| All factors | 53.33% | 60.21% |
+| No liquidity | 51.26% | 60.16% |
+| No investment | 51.86% | 63.82% |
+| Nested selection | 51.57% | 66.40% |
+| One-standard-error rule | 39.96% | 60.21% |
+
+No meaningful external improvement; conservative selection recovers saturation externally, while original WAPE improves 1.12 percentage points. No fitted coefficient transfer or valuation change. Anthropic stored filing inputs imply 9m CFO margin 19.76%, capex ratio 2.78%, CFO minus capex $5.644B, cash/investments versus next-12-month gross commitments 1.86x, through-2030 commitments/cash 3.43x, financing/CFO 16.86x, top-five direct customer share 25% and HHI lower bound 0.0125. Gross commitment coverage is not runway or a net cash forecast; cash includes investments and does not match historical cash equivalents. CFO less capex is not FCFF, and compute leases/commitments require separate cash timing without double counting. [Data](data/dotcom_structural_factors.csv) · [Code](evaluation/structural_factors.py)
+
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
 The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
@@ -674,7 +712,7 @@ These are mean equity residuals ($B), not validated fair-value estimates. Expens
 
 ## 9. Reproduction and data
 
-50 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+54 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
@@ -685,6 +723,7 @@ python -m evaluation.fundamental_growth
 python -m evaluation.external_validation
 python -m evaluation.competing_risk
 python -m evaluation.covariance_factors
+python -m evaluation.structural_factors
 python -m unittest discover -s evaluation -v
 ```
 
