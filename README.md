@@ -8,6 +8,8 @@ Research snapshot: 2026-11-19. All amounts are USD billions unless noted.
 
 ## 1. Conclusion
 
+**Historical full-model readiness:** 14 origin-known customer anchors across five cloud issuers; 0/5 profiles qualify for full-model equity scoring. The unchanged-market-cap reference WAPE is 58.82%; production equity WAPE is unavailable, not zero. The account stock-flow bounds cannot separate acquisition and retention. See `python -m evaluation.customer_identification` and [evidence](data/cloud_customer_vintage_evidence.csv).
+
 **Equity-loss development training:** 60 structural trials and 11 premium-persistence trials on four 1999 issuers. Five-year equity WAPE on previously exposed cloud issuers: 89.66% baseline, 64.46% structural fit, 66.94% premium fit; unchanged initial market cap 58.82%. Revenue WAPE: 24.57%, 31.47%, 24.57%. No parameter promotion or blind-test claim. See [protocol](evaluation/equity_training_protocol.md) and run `python -m evaluation.equity_training`.
 
 **Conditional mean equity residual: $164.04B (0.164T).** This is the average of 1,024 macro paths under base structural assumptions, not a fitted fair-value target. Reduced DCF equity WAPE is 83.13%; direct aggregate joint-engine diagnostic is 86.98%. Full customer-level validation is blocked; equity validation has failed.
