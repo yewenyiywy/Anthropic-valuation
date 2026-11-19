@@ -6,7 +6,7 @@ Research snapshot: 2026-11-19. All amounts are USD billions unless noted.
 
 ## 1. Conclusion
 
-**Conditional mean equity residual: $164.04B (0.164T).** This is the average of 1,024 macro paths under base structural assumptions, not a fitted fair-value target.
+**Conditional mean equity residual: $164.04B (0.164T).** This is the average of 1,024 macro paths under base structural assumptions, not a fitted fair-value target. Cross-cycle five-year equity WAPE is 83.13%; valuation validation has failed.
 
 | Statistic | Equity residual |
 |---|---:|
@@ -706,6 +706,27 @@ L(\theta)=\frac1n\sum_i|\log(\widehat R_{i,5}(\theta)/R_{i,5})|+0.5|g_{\infty}|
 | Fixed 15% log growth diagnostic | 15.94% | 17.10% | +7.28% |
 
 The 15% floor is an exploratory sensitivity, not a validated winner or a perpetual terminal growth rate. The frozen blend remains the benchmark; no Anthropic valuation adjustment is justified by these five surviving, large and heterogeneous issuers. This validates consolidated revenue only, not cash flow or equity value. Historical inputs may include retrospective restatements; cloud data have FY-specific cutoffs and M&A effects. No cloud outcomes enter the forecast fit (tested). Run `python -m evaluation.cloud_cycle`.
+
+
+#### Five-year equity valuation holdout (FY2020–FY2025)
+
+Use only FY2020 and earlier financial inputs to forecast year-end 2025 equity capitalization. The reduced-state finite lifecycle DCF uses the frozen size-blend revenue forecast, CFO less capex as an imperfect FCFF proxy, margin convergence to 15%, fixed net cash and 12% discount rate.
+
+```math
+\widehat V_5=\sum_{t=6}^{10}\frac{\widehat{FCF}_t}{(1+W)^{t-5}}+(1+W)^5PV_0(FCF_{11:30})+Cash_0-Debt_0
+```
+
+| Company | Actual 2025 cap | Predicted equity |
+|---|---:|---:|
+| Adobe | 146.51 | 30.55 |
+| Salesforce | 248.22 | 37.37 |
+| PayPal | 54.62 | 42.66 |
+| ServiceNow | 159.32 | 14.31 |
+| Shopify | 209.56 | 13.13 |
+
+Equity WAPE **83.13%**, MAPE 74.15%, signed bias -83.13%, ±20% hit rate zero. Flat market cap WAPE 58.82%; constant price-to-sales 124.89%. At 8% discount rate WAPE remains 80.20%; full cash retention yields 75.78%. [Source data](data/cloud_equity_cohort.csv). Run `python -m evaluation.cloud_equity`. Leakage test changes future revenue and capitalization without changing predictions.
+
+**Valuation verification failed.** Revenue WAPE of 16.25% is not equity accuracy. Market value is not intrinsic value; fiscal-year/calendar mismatches remain. This is a reduced-state transfer, not validation of the full customer-level model. CFO-capex omits complete treatment of interest, SBC, financing and acquisitions. Do not multiply Anthropic valuation by the observed error ratio; independently calibrate margins, capital structure, lifecycle and discount rates.
 
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
