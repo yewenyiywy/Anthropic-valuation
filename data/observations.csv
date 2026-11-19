@@ -1,4 +1,6 @@
 id,value,unit,period,kind,scope,source_url
+establishment_26y_survival,.157,fraction,2000-2026,proxy,US private establishments not public AI firms,https://www.bls.gov/opub/ted/2026/outlast-state-establishment-survival-rates-from-2000-to-2026.htm
+establishment_10y_survival,.347,fraction,2013-2023,proxy,US private establishments not public AI firms,https://www.bls.gov/opub/ted/2024/34-7-percent-of-business-establishments-born-in-2013-were-still-operating-in-2023.htm
 revenue_2023,0.041,USD bn,2023,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
 revenue_2024,0.386,USD bn,2024,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
 revenue_2025,4.585,USD bn,2025,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm

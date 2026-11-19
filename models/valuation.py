@@ -47,12 +47,58 @@ SCENARIOS = {
                  wacc=.10, terminal_growth=.035),
 }
 
+# Illustrative effective demand ceilings (not observed TAM), subscription overlap,
+# and corporate lifecycle transition probabilities. No empirical calibration implied.
+for name, extra in {
+    'bear': dict(ceiling=2, personal=.5, employer0=.4, employer_end=.8, cannibal=.8, exit=.12, decline=.30, renew=.03),
+    'base': dict(ceiling=4, personal=.5, employer0=.4, employer_end=.7, cannibal=.5, exit=.06, decline=.20, renew=.08),
+    'bull': dict(ceiling=8, personal=.5, employer0=.4, employer_end=.6, cannibal=.2, exit=.03, decline=.10, renew=.15),
+}.items():
+    SCENARIOS[name].update(extra)
+
+def overlap_factor(employer, cannibal):
+    return 1-employer*cannibal
+
+def commitment_floor(t, o):
+    # Annualized approximation: allocate the entire reported total exactly over 19 years.
+    if t == 1: return o['commit_next12m']
+    if t <= 4: return (o['commit_to_2030']-o['commit_next12m'])/3
+    if t <= 19: return (o['commit_total']-o['commit_to_2030'])/15
+    return 0
+
+def lifecycle_tail(revenue, p, o, start=10, horizon=30):
+    """Finite Markov reward model: mature, declining, renewed, exited.
+
+    Revenue mass tracks E[revenue * 1(state)], preserving path-dependent growth.
+    Exit receives zero operating revenue; expected outstanding compute commitments
+    remain charged separately in this conservative no-release stress.
+    No terminal sale or liquidation recovery at horizon.
+    """
+    e,d,u=p['exit'],p['decline'],p['renew']
+    P=((1-e-d-u,d,u,e),(.10,1-e-.10-u,u,e),(.40,d,1-e-.40-d,e),(0,0,0,1))
+    growth=(1.00,.85,1.08,0)
+    margins=(.15,.03,.20,0) # after variable compute, other costs, capex and tax; assumptions
+    mass=[revenue,0,0,0]; prob=[1,0,0,0]; pv=0; tail=[]
+    for t in range(start+1,horizon+1):
+        mass=[sum(mass[i]*P[i][j] for i in range(4))*growth[j] for j in range(4)]
+        prob=[sum(prob[i]*P[i][j] for i in range(4)) for j in range(4)]
+        # Extra commitment shortfall: aggregate lower bound (Jensen);
+        # exact expectation of max requires a full revenue-path distribution.
+        expected_rev=sum(mass)
+        shortfall=max(0,commitment_floor(t,o)-p['cost_ratio']*expected_rev)
+        fcf=sum(mass[j]*margins[j] for j in range(4))-shortfall
+        pv+=fcf/(1+p['wacc'])**t
+        tail.append(dict(year=t,revenue=expected_rev,fcf=fcf,alive=1-prob[3]))
+    return pv,tail
+
 def forecast(p, o=None, years=10):
     o = observations() if o is None else o
     # October run rate is a starting intensity; segment split is September historical proxy.
     api = o["run_rate"] * o["consumption_9m26"] / o["revenue_9m26"]
     sub = o["run_rate"] - api
     startup, trial = api*p["startup"], api*p["trial"]
+    personal=sub*p['personal']; enterprise_sub=sub-personal
+    personal_raw=personal
     mature = api-startup-trial
     rows = []
     for t in range(1, years+1):
@@ -69,13 +115,21 @@ def forecast(p, o=None, years=10):
         new = previous_api * p["new"] * fade
         startup += new*.4
         trial = new*.6
-        sub *= 1+p["subscription_growth"]*fade + p["terminal_growth"]*(1-fade)
+        # Personal and employer invoices are disjoint; overlap modifies personal demand only.
+        personal_raw *= 1+p['subscription_growth']*fade
+        employer=p['employer0']+(p['employer_end']-p['employer0'])*min(t/10,1)
+        personal=personal_raw*overlap_factor(employer,p['cannibal'])/overlap_factor(p['employer0'],p['cannibal'])
+        enterprise_sub *= 1+p['subscription_growth']*fade
+        sub=personal+enterprise_sub
+        # Conditional revenue ceiling, gradually reaching the assumed ceiling by year 10.
+        limit=o['run_rate']*(1+(p['ceiling']-1)*min(t/10,1))
+        scale=min(1,limit/(startup+trial+mature+sub))
+        startup*=scale; trial*=scale; mature*=scale
+        personal*=scale; personal_raw*=scale; enterprise_sub*=scale; sub=personal+enterprise_sub
         revenue = startup+trial+mature+sub
         # Cash expense model: commitments are a floor, not added atop variable compute.
         # This allocates aggregate commitments evenly in two buckets (timing proxy).
-        floor = (o["commit_next12m"] if t==1 else
-                 (o["commit_to_2030"]-o["commit_next12m"])/3.25 if t<=4 else
-                 (o["commit_total"]-o["commit_to_2030"])/15)
+        floor = commitment_floor(t,o)
         compute = max(floor, revenue*p["cost_ratio"])
         other = revenue*p["other_ratio"]
         capex = revenue*p["capex"]
@@ -83,14 +137,11 @@ def forecast(p, o=None, years=10):
         # Simplified cash-tax proxy; no tax benefit for loss; no separate WC forecast.
         fcf = pretax - max(0,pretax)*.25
         rows.append(dict(year=t,revenue=revenue,startup=startup,trial=trial,mature=mature,
-                         subscription=sub,compute=compute,commitment_floor=floor,
+                         subscription=sub,personal=personal,enterprise_subscription=enterprise_sub,ceiling=limit,compute=compute,commitment_floor=floor,
                          other=other,capex=capex,fcf=fcf))
-    w,g = p["wacc"],p["terminal_growth"]
-    if w<=g: raise ValueError("WACC must exceed terminal growth")
-    # Terminal cap is normalized rather than perpetuating the temporary commitment floor.
-    terminal_fcf = rows[-1]["revenue"]*max(0,1-p["cost_ratio"]-p["other_ratio"]-p["capex"])*.75
-    tv = terminal_fcf*(1+g)/(w-g)
-    ev = sum(r["fcf"]/(1+w)**r["year"] for r in rows)+tv/(1+w)**years
+    w = p['wacc']
+    tail_pv,_ = lifecycle_tail(rows[-1]['revenue'],p,o,start=years)
+    ev = sum(r['fcf']/(1+w)**r['year'] for r in rows)+tail_pv
     # Convertible liability treatment is illustrative (carrying value, not payoff),
     # do not add IPO cash twice or report a per-share value without a diluted cap table.
     bridge = o["proforma_cash"]-o["proforma_convertibles"]

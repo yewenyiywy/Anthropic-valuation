@@ -1,4 +1,5 @@
 # Evaluation
+- V2 additionally tests commitment reconciliation, employer overlap, revenue ceiling, and absorbing lifecycle exit. Ten checks pass. Lifecycle probabilities and demand ceilings are uncalibrated stresses.
 - Reconcile filing revenue mix and cash flow definitions; validate uniqueness and source URLs.
 - Leave-one-birth-cohort-out BLS five-year survival baseline: train on other five cohorts, predict held-out cohort; MAE is a historical proxy error, not AI startup predictive accuracy.
 - Stress test conversion versus rollout and price versus volume with exact break-even identities.

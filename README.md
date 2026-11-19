@@ -1,95 +1,33 @@
-# Anthropic valuation — an exploratory research project
+# Anthropic Valuation — Lifecycle DCF (v2)
 
-> just a exploratory project for fun. I just really want to calculate if it is overvalued.
+Research snapshot: 2026-11-19. Units: USD billions unless specified. Exploratory conditional stress tests, not fair-value targets.
 
-**Research snapshot: 2026-11-19.** All monetary outputs are USD billions unless otherwise specified. This is an exploratory stress model, not a price target or investment recommendation.
+## Results
 
-## Preliminary conclusion
+| Scenario | Year 1 revenue | Year 5 revenue | Year 10 revenue | PV years 1–10 | PV years 11–30 | Enterprise value | Equity residual |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Bear | 57.15 | 36.66 | 31.40 | -255.00 | -21.68 | -276.68 | -174.87 |
+| Base | 105.30 | 202.50 | 221.34 | 45.56 | 33.10 | 78.66 | 180.47 |
+| Bull | 137.70 | 364.50 | 467.21 | 516.03 | 163.20 | 679.23 | 781.04 |
 
-The October $81B revenue run rate is not equivalent to contracted or realized annual sales. 79% of the first nine months' revenue was consumption-based; five customers contributed roughly 25%. Disclosed cash and short-term investments were $131.845B as of September, compared with $110.735B in nine-month financing inflows and $6.569B of operating cash flow. The updated prospectus reports $900.9B of aggregate compute-related purchase/lease commitments, including $70.7B in the next twelve months. This creates material operating leverage if demand disappoints.
+Negative equity residual means funding distress, not a negative stock price. No financing or restructuring path is modeled. The earlier unconstrained Gordon-growth scenario gave 5,446.15; v2 changes revenue constraints and the terminal methodology jointly, so the difference cannot be attributed solely to Gordon growth. None of these are statistically calibrated forecasts.
 
-The current scenario engine produces these **conditional stresses**, not an empirically fitted fair-value range:
+## Why we replace Gordon growth
 
-| Scenario | Year 1 revenue | Year 5 revenue | Operating EV | Illustrative equity bridge |
-|---|---:|---:|---:|---:|
-| Bear | 57.56 | 39.54 | -227.63 | -125.82 |
-| Base | 105.66 | 239.05 | 256.78 | 358.59 |
-| Extreme upside stress | 164.10 | 1230.83 | 5344.34 | 5446.15 |
+The Gordon model assumes a normalized cash flow grows at a fixed rate indefinitely, conditional on a continuing business:
 
-Negative residual equity signals funding distress, not a negative tradable share price. The extreme upside outcome exposes how extreme compounding of successful projects and new demand changes the output; it is not a supported forecast. A $2T equity benchmark is therefore not justified merely by current adoption or annualized revenue; it requires assumptions about durable demand, prices and margins that remain unverified. At a 12% discount rate, 3% perpetual growth and 25% FCFF margin, a steady-state $2T EV requires $720B next-year revenue (reverse DCF, ignoring interim cash flows). The $2T reference is hypothetical, not a verified current market cap.
+```math
+TV_T=\frac{FCF_T(1+g)}{W-g}
+```
 
-## Why the extreme upside scenario is so large
 
-The previous Bull label should be understood as an **uncalibrated extreme upside stress**, not a reasonable forecast or target. The model has no validated addressable-demand ceiling, and its optimistic inputs compound together.
+It is mathematically valid when the cash-flow assumptions hold and the discount rate exceeds growth. It is not a reliable default for a young model provider facing commoditization, price competition and business-model displacement. A zero or negative growth rate is possible even in Gordon; the issue is imposing one permanent regime.
 
-In year 1, the existing consumption-revenue multiplier is:
+- [Chan, Karceski and Lakonishok (2003)](https://www.nber.org/papers/w8282) find weak persistence and limited predictability of long-run firm earnings growth.
+- [BLS 2013 cohort](https://www.bls.gov/opub/ted/2024/34-7-percent-of-business-establishments-born-in-2013-were-still-operating-in-2023.htm): 34.7% of business establishments survived ten years.
+- [BLS 2000 cohort](https://www.bls.gov/opub/ted/2026/outlast-state-establishment-survival-rates-from-2000-to-2026.htm): 15.7% survived 26 years. These are establishments, not matched public technology firms; neither number calibrates Anthropic's hazard.
 
-$
-K_1=1.85\times0.88\times1.00=1.628
-$
-
-Successful pilot deployment doubles the previous trial cohort before the common multiplier:
-
-$
-p\times m=0.50\times4=2.00
-$
-
-$
-G_1\times K_1=2.00L_0\times1.628=3.256L_0
-$
-
-Additionally, new consumption revenue is assumed to be 30% of the preceding year's consumption revenue at the start of the forecast. This can overlap economically with the assumed volume expansion if the underlying customer acquisition and spending inputs are not carefully separated.
-
-| Forecast year | Revenue (USD B) | Cash-flow proxy (USD B) |
-|---|---:|---:|
-| 1 | 164.10 | 39.28 |
-| 2 | 299.69 | 80.68 |
-| 3 | 519.74 | 155.92 |
-| 4 | 836.62 | 250.98 |
-| 5 | 1,230.83 | 369.25 |
-| 6 | 1,628.33 | 488.50 |
-| 7 | 1,901.18 | 570.35 |
-| 8 | 1,913.42 | 574.02 |
-| 9 | 1,887.34 | 566.20 |
-| 10 | 1,863.60 | 559.08 |
-
-The year-10 revenue is around 23 times the initial annualized run rate. This is an output of the assumptions rather than evidence of market demand.
-
-The optimistic cost assumptions produce a normalized cash-flow margin of:
-
-$
-\mu=0.75(1-0.35-0.20-0.05)=30\%
-$
-
-With a 10% discount rate and 3.5% perpetual growth:
-
-$
-PV(TV)=\frac{559.08\times1.035}{(0.10-0.035)(1.10)^{10}}\approx3432.21
-$
-
-$
-EV=1912.12+3432.21=5344.33
-$
-
-$
-\frac{PV(TV)}{EV}\approx64.2\%
-$
-
-The illustrative equity bridge then adds 101.811 billion, giving approximately 5.446 trillion.
-
-### One-at-a-time sensitivity (all other extreme upside inputs unchanged)
-
-| Changed assumption | Equity residual (USD B) |
-|---|---:|
-| Original extreme stress | 5,446.15 |
-| Annual initial price multiplier: 0.88 to 0.65 | 2,348.34 |
-| Annual initial volume multiplier: 1.85 to 1.45 | 2,365.07 |
-| Successful pilot rollout: 4x to 2x | 3,307.08 |
-| Initial new revenue rate: 30% to 10% | 2,915.76 |
-| Cost ratios changed to base case | 2,916.34 |
-| WACC 12%, terminal growth 3% | 3,860.84 |
-
-These are recomputed counterfactuals, not confidence intervals; the effects are non-additive. The current upside case is useful only as a diagnostic showing how unsupported growth and margin assumptions can inflate valuation. A defensible upside forecast requires a calibrated bottom-up paid demand ceiling, mutually exclusive customer acquisition and expansion drivers, and long-run competitive price and cost estimates. Do not interpret the extreme scenario as fair value.
+A growing industry does not guarantee a particular company's cash flows grow. Industry gains may accrue to customers and competitors. The new model permits contraction, renewal, and absorbing exit. It uses a finite 30-year horizon, zero residual value thereafter, explicitly a conservative truncation assumption rather than proof the company will cease to exist.
 
 ## Mathematical valuation methodology
 
@@ -280,214 +218,177 @@ K_t=\left[1+(v-1)d_t\right]\left[1-(1-q)d_t\right]\left[1-(1-m_s)d_t\right]
 
 $v$, $q$, and $m_s$ are initial annual volume, price and market-share multipliers. Source for directional price pressure: [Ramp September 2026](https://ramp.com/data/ai-index-sept-2026).
 
-### Step 8 — Consolidated annual revenue recursion
-
-New consumption revenue:
+### Step 8 — Revenue recursion with overlapping personal and employer demand
 
 ```math
-J_t=n\,d_t(S_{t-1}+L_{t-1}+H_{t-1})
+J_t=n d_t(S_{t-1}+L_{t-1}+H_{t-1})
 ```
 
 ```math
-S_t=S_{t-1}s_1F_tK_t+0.4J_t
-```
-
-```math
-L_t=0.6J_t
+S_t=S_{t-1}s_1F_tK_t+0.4J_t,\qquad L_t=0.6J_t
 ```
 
 ```math
 H_t=(H_{t-1}+pmL_{t-1})K_t
 ```
 
-The 40/60 startup/pilot split of new revenue is an assumption.
 
-Subscription revenue:
-
-```math
-B_t=B_{t-1}\left[1+b\,d_t+g(1-d_t)\right]
-```
-
-**Total modeled annual revenue:**
+Consumption and subscription are invoice categories, not unique people. Split subscriptions into personal and enterprise invoices (initial personal fraction 50% assumption). Let A denote personal payment and B employer access.
 
 ```math
-R_t=S_t+L_t+H_t+B_t
-```
-
-$n$ is the new-consumption-revenue rate, $b$ is initial subscription growth, and $g$ is terminal growth. No independent bottom-up demand ceiling has been calibrated, which makes the upside scenario particularly speculative.
-
-### Step 9 — Compute commitments, operating costs & cash flow
-
-The disclosed commitments are $70.7B over the next 12 months, $451.6B before the end of 2030 and $900.9B in aggregate. Source: [SEC S-1/A](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm).
-
-The **implemented approximate annual allocation**, not a verified contractual payment schedule:
-
-```math
-K_t^{\mathrm{floor}}=
-\begin{cases}
-70.7 & t=1\\
-(451.6-70.7)/3.25 & 2\le t\le4\\
-(900.9-451.6)/15 & t\ge5
-\end{cases}
+\Pr(A\cup B)=\Pr(A)+\Pr(B)-\Pr(A\cap B)
 ```
 
 ```math
-C_t=\max(K_t^{\mathrm{floor}},cR_t)
+\Pr(A)=\Pr(A\mid B)\Pr(B)+\Pr(A\mid B^c)(1-\Pr(B))
 ```
 
 ```math
-O_t=oR_t,\qquad X_t=xR_t
+\kappa=1-\frac{\Pr(A\mid B)}{\Pr(A\mid B^c)},\qquad \Pr(A)=\Pr(A\mid B^c)(1-\kappa\Pr(B))
 ```
 
-$c,o,x$ are variable compute, other cash operating expense and incremental capex ratios. The floor is not added again to variable compute. The allocation does not exactly reconcile calendar-year maturities; this is a stress approximation.
 
-**Simplified pretax cash surplus:**
-
-```math
-Y_t=R_t-C_t-O_t-X_t
-```
-
-**Simplified unlevered cash-flow proxy:**
+Actual separate invoices both count; only conditional demand is adjusted. Let employer coverage interpolate from e0 to e10. Personal revenue is scaled relative to baseline overlap; enterprise subscriptions grow independently at the assumed rate b.
 
 ```math
-FCF_t=Y_t-0.25\max(Y_t,0)
-```
-
-The 25% cash tax, no loss tax benefit, no explicit working-capital schedule and cash expense classification are simplifications. This is not a full accounting FCFF reconstruction.
-
-Historical sanity checks (nine months ending September 2026):
-
-```math
-CFO-CapEx=6.569-0.925=5.644
+e_t=e_0+(e_{10}-e_0)\min(t/10,1)
 ```
 
 ```math
-CFO-CapEx-LeasePrepayments=5.644-1.955=3.689
-```
-
-Neither historical measure is normalized FCFF.
-
-### Step 10 — Discounted cash flow and equity bridge
-
-Forecast horizon $T=10$; assumed discount rate $W$ must exceed terminal growth $g$.
-
-```math
-m_{\infty}=0.75\max(0,1-c-o-x)
+B^{raw}_t=B^{raw}_{t-1}(1+bd_t)
 ```
 
 ```math
-FCF_{\infty}=R_Tm_{\infty}
+B^{personal}_t=B^{raw}_t\frac{1-\kappa e_t}{1-\kappa e_0}
 ```
 
 ```math
-TV_T=\frac{FCF_{\infty}(1+g)}{W-g}
+B^{enterprise}_t=B^{enterprise}_{t-1}(1+bd_t)
 ```
 
 ```math
-EV_0=\sum_{t=1}^{T}\frac{FCF_t}{(1+W)^t}+\frac{TV_T}{(1+W)^T}
+R_t^{raw}=S_t+L_t+H_t+B^{personal}_t+B^{enterprise}_t
 ```
 
-Illustrative equity bridge:
+
+A conditional effective revenue ceiling limits the forecast, not a measured TAM:
 
 ```math
-V_{\mathrm{equity}}=EV_0+212.684-110.873=EV_0+101.811
-```
-
-The cash figure is illustrative pro forma cash and short-term investments; the convertible carrying value is not a confirmed payoff amount. Final IPO proceeds, leases, minority claims and dilution remain to be reconciled. Negative residual equity indicates distress, not a negative stock price.
-
-### Step 11 — Reverse DCF: what does a $2 trillion valuation require?
-
-For a hypothetical steady-state $2{,}000B enterprise value with normalized cash-flow margin $\mu$:
-
-```math
-EV=\frac{\mu R_1}{W-g}
+D_t=81[1+(d_{\max}-1)\min(t/10,1)]
 ```
 
 ```math
-R_1=\frac{EV(W-g)}{\mu}
+R_t=\min(R_t^{raw},D_t)
+```
+
+
+Every cohort and the raw personal accumulator is scaled by the same ratio if the ceiling binds. The ceiling is an explicit stress input, not a substitute for actual country and industry demand calibration.
+
+### Step 9 — Compute commitments and cash flow
+
+[SEC prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm): aggregate commitments 900.9, including 70.7 in next 12 months and 451.6 by end of 2030. Approximate annual buckets reconcile total; actual calendar maturity schedule is unknown.
+
+```math
+K^{floor}_1=70.7,\qquad K^{floor}_{2:4}=(451.6-70.7)/3
 ```
 
 ```math
-R_1=\frac{2{,}000(0.12-0.03)}{0.25}=720
-```
-
-That is $720B of next-year annual revenue under these assumptions, ignoring interim growth and cash flows. It is an EV benchmark, not a verified equity market cap.
-
-### Step 12 — Correlated scenario simulation
-
-A common scenario factor is drawn using a triangular distribution:
-
-```math
-Z\sim\mathrm{Triangular}(-1,0,1)
+K^{floor}_{5:19}=(900.9-451.6)/15,\qquad K^{floor}_{20:30}=0
 ```
 
 ```math
-\theta(Z)=
-\begin{cases}
-\theta_{\mathrm{base}}+\lvert Z\rvert(\theta_{\mathrm{bear}}-\theta_{\mathrm{base}}),&Z<0\\
-\theta_{\mathrm{base}}+\lvert Z\rvert(\theta_{\mathrm{bull}}-\theta_{\mathrm{base}}),&Z\ge0
-\end{cases}
+C_t=\max(K^{floor}_t,cR_t),\qquad O_t=oR_t,\qquad X_t=xR_t
 ```
 
 ```math
-V^{(i)}=\mathrm{DCF}(\theta(Z_i)),\qquad i=1,\ldots,2000
+Y_t=R_t-C_t-O_t-X_t,\qquad FCF_t=Y_t-0.25\max(Y_t,0)
 ```
 
-Seed = 42. This is a single-factor stress interpolation, not a fitted joint probability distribution. Its P10/P50/P90 equity residuals are -34.36 / 372.06 / 1664.25 (USD billions).
 
-## Scenario parameter register
+Cash tax proxy, no working capital forecast. Commitments are a floor, not additional spend on top of variable compute. Historical CFO less PPE purchases is 5.644, or 3.689 after lease prepayments; neither is normalized FCFF.
 
-All values below are assumptions used in the existing code, except where a proxy anchor is noted.
+### Step 10 — Lifecycle continuation (replaces Gordon terminal value)
 
-| Parameter | Symbol | Bear | Base | Bull |
-|---|---|---:|---:|---:|
-| Startup revenue mix | $w_S$ | 55% | 40% | 25% |
-| Pilot revenue mix | $w_L$ | 25% | 30% | 20% |
-| Five-year survival (BLS proxy) | $s_5$ | 40% | 54% | 65% |
-| Funding multiplier | $f$ | 0.70 | 0.90 | 1.05 |
-| Pilot conversion | $p$ | 20% | 35% | 50% |
-| Successful rollout multiplier | $m$ | 2 | 3 | 4 |
-| Token volume multiplier | $v$ | 1.45 | 1.65 | 1.85 |
-| Token price multiplier | $q$ | 0.65 | 0.78 | 0.88 |
-| Market share multiplier | $m_s$ | 0.90 | 0.96 | 1.00 |
-| New consumption revenue rate | $n$ | 10% | 20% | 30% |
-| Subscription growth | $b$ | 3% | 12% | 22% |
-| Compute cost ratio | $c$ | 65% | 48% | 35% |
-| Other operating expense ratio | $o$ | 35% | 25% | 20% |
-| Capex ratio | $x$ | 6% | 6% | 5% |
-| Discount rate | $W$ | 15% | 12% | 10% |
-| Terminal growth | $g$ | 2.5% | 3% | 3.5% |
-
-## Evaluation methodology
-
-Historical survival leave-one-cohort-out prediction:
+Start year 10 in Mature. States in order: Mature, Declining, Renewed, Exited. Exit is absorbing. Annual exit probability e, decline probability d, renewal probability u are assumed, not fitted.
 
 ```math
-\widehat{s}_{5,-i}=\frac{1}{N-1}\sum_{j\ne i}s_{5,j}
+P=\begin{pmatrix}1-e-d-u&d&u&e\\0.10&1-e-0.10-u&u&e\\0.40&d&1-e-0.40-d&e\\0&0&0&1\end{pmatrix}
 ```
 
 ```math
-MAE=\frac{1}{N}\sum_{i=1}^{N}\lvert s_{5,i}-\widehat{s}_{5,-i}\rvert
+\pi_{10}=(1,0,0,0),\qquad \pi_t=\pi_{t-1}P
 ```
 
-This evaluates a historical establishment-survival proxy only. It is not an out-of-sample Anthropic forecast. The seven automated checks also test source integrity, accounting reconciliation, price-volume and conversion identities, scenario ordering and simulation reproducibility. Independent source validation remains incomplete for several key inputs.
 
-## Reproduce
+Expected revenue mass by state, not merely probability times a fixed revenue, preserves path-dependent growth.
 
-Python 3.10+; standard library only.
+```math
+a_{10}=(R_{10},0,0,0),\qquad a_t=a_{t-1}P\,\mathrm{diag}(1,0.85,1.08,0)
+```
+
+```math
+E[R_t]=\sum_j a_{t,j}
+```
+
+
+Assumed normalized after-tax cash margins by state: 15%, 3%, 20%, 0%. These include ordinary variable compute, other expenses and capex. No new revenue ceiling is applied in the tail. Charge remaining commitments even after exit in this no-contract-release stress; actual resolution or recovery is not modeled.
+
+```math
+E[FCF_t]\approx \sum_j a_{t,j}\mu_j-\max(0,K^{floor}_t-cE[R_t])
+```
+
+
+The aggregate commitment shortfall is a lower bound by convexity, not exact expected shortfall.
+
+```math
+EV_0=\sum_{t=1}^{10}\frac{FCF_t}{(1+W)^t}+\sum_{t=11}^{30}\frac{E[FCF_t]}{(1+W)^t}
+```
+
+```math
+V_{\mathrm{equity}}=EV_0+212.684-110.873
+```
+
+
+Pro forma cash and convertible carrying value are illustrative; actual final capitalization, debt repayment terms and dilution remain unresolved. No terminal sale price or post-year-30 cash flows are assumed. Exit probabilities should not double-count credit risk in WACC.
+
+### Step 11 — Scenario simulation
+
+2,000 seeded triangular draws interpolate between bear/base/bull parameters using one common factor. Quantiles of equity residual: -70.70 / 185.39 / 455.97. Not statistical confidence intervals.
+
+## Scenario inputs
+
+| Input | Bear | Base | Bull |
+|---|---:|---:|---:|
+| Startup / trial starting weights | 55% / 25% | 40% / 30% | 25% / 20% |
+| Five-year startup survival | 40% | 54% | 65% |
+| Funding multiplier | .70 | .90 | 1.05 |
+| GTM success / rollout | .20 / 2 | .35 / 3 | .50 / 4 |
+| Initial volume / price / share multipliers | 1.45 / .65 / .90 | 1.65 / .78 / .96 | 1.85 / .88 / 1.00 |
+| New consumption rate | 10% | 20% | 30% |
+| Subscription growth | 3% | 12% | 22% |
+| Compute / other / capex ratios | .65 / .35 / .06 | .48 / .25 / .06 | .35 / .20 / .05 |
+| Year-10 revenue ceiling multiple of 81 | 2 | 4 | 8 |
+| Initial employer coverage | 40% | 40% | 40% |
+| Year-10 employer coverage | 80% | 70% | 60% |
+| Cannibalization | 80% | 50% | 20% |
+| Annual lifecycle exit / decline / renewal | 12% / 30% / 3% | 6% / 20% / 8% | 3% / 10% / 15% |
+| Discount rate | 15% | 12% | 10% |
+
+These are scenario assumptions, not measured values. Base implied probability of surviving years 11–30 conditional on reaching year 10 is 29.0%; bear 7.8%, bull 54.4%.
+
+## Reproduce and evaluate
 
 ```bash
 python -m models.valuation
 python -m unittest discover -s evaluation -v
 ```
 
-## Repository layout
 
-- `data/`: source-linked observations and definitions.
-- `models/`: executable cohort, GTM, demand, pricing, cash-flow, DCF and correlated scenario functions.
-- `evaluation/`: source integrity checks, filing reconciliation, historical proxy holdout tests, stress identities and reproducibility.
-- `research/`: methodology and open data requirements.
+Ten tests pass: source integrity, historical reconciliation, BLS leave-one-cohort-out, project conversion, price-volume identity, scenario ordering, reproducibility, commitment sum, overlap and revenue ceiling, lifecycle exit. Historical proxy validation is not a calibrated Anthropic out-of-sample backtest.
 
-## Evaluation and next priorities
+- [Data register](data/observations.csv)
+- [Data definitions](data/README.md)
+- [Model](models/valuation.py)
+- [Tests](evaluation/test_models.py)
 
-Seven automated checks pass. The BLS holdout error tests only the historical survival baseline; there is insufficient Anthropic time-series evidence for a valid forward revenue backtest. Source links are traceable; independent confirmation is strongest for distinct measures, not for repeated reports of the same dataset. For the next iteration, collect country population and income distribution, paid AI usage, token mix, actual customer cohorts, quarterly revenue and commitment maturity schedules. Refit on historical periods and evaluate on held-out future dates. Do not publish a precise intrinsic value until that evidence is available.
+Next: estimate country-age paid conversion and employer overlap; customer funding provenance; enterprise budgets; lifecycle transitions from comparable public technology companies; actual commitment schedule. Until then, no precise intrinsic value claim.

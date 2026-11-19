@@ -33,6 +33,21 @@ class TestModels(unittest.TestCase):
         self.assertEqual(vals,sorted(vals))
     def test_reproducibility(self):
         self.assertEqual(monte_carlo(20),monte_carlo(20))
+    def test_overlap_and_ceiling(self):
+        self.assertAlmostEqual(overlap_factor(.6,.5),.7)
+        for p in SCENARIOS.values():
+            rows,_,_=forecast(p)
+            for r in rows:
+                self.assertLessEqual(r['revenue'],r['ceiling']+1e-8)
+                self.assertAlmostEqual(r['subscription'],r['personal']+r['enterprise_subscription'])
+    def test_commitment_reconciliation(self):
+        o=observations()
+        self.assertAlmostEqual(sum(commitment_floor(t,o) for t in range(1,20)),o['commit_total'])
+    def test_lifecycle_exit(self):
+        p=SCENARIOS['base']; o=observations()
+        _,tail=lifecycle_tail(100,p,o)
+        self.assertAlmostEqual(tail[-1]['alive'],(1-p['exit'])**20)
+        self.assertEqual(tail[-1]['year'],30)
 
 if __name__=="__main__":
     unittest.main()
