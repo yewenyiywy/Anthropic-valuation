@@ -639,6 +639,44 @@ $
 
 残差化降低原样本WAPE但外部退化；基于衰减模型的残差修正更稳定，但仍未胜过未修正衰减模型。暂不迁移因子系数至Anthropic。现金跑道、债务到期、客户集中度、份额和价格需要可比历史及Anthropic专属输入后才能估计。估值不变。[财务数据](data/dotcom_cash_factors.csv) · [代码](evaluation/covariance_factors.py)
 
+#### 资本强度、研发投入与流动性
+
+增加历史资本开支/收入、研发或产品开发投入/收入（不等于研发效率）、现金及现金等价物/收入、现金跑道倒数代理。16家公司覆盖10/10/8/8；CFO覆盖增至10。4家公司能确认是否存在至少10%收入的大客户，保留披露但不拟合。债务、市场份额、价格弹性缺乏可比数据，不捏造。Amazon技术及内容费用比研发宽泛，各家公司会计口径存在差异。分组消融采用训练折有观测值均值和标准差、缺失标准化信号设零、协方差收缩白化和覆盖权重；内层留一公司仅用2000—03选择岭参数和白化强度。一倍标准误差规则仅为保守选择启发式，不是正式置信区间。外部队列此前已观察，此处为诊断。
+
+$
+x_{\mathrm{capex}}=\frac{Capex}{R},\quad x_{\mathrm{dev}}=\frac{Development}{R},\quad x_{\mathrm{cash}}=\log(1+Cash/R)
+$
+
+$
+x_{\mathrm{burn}}=\log\left(1+\frac{\max(0,Capex-CFO)}{Cash}\right)
+$
+
+$
+Z^*=Z[(1-\alpha)C+\alpha I]^{-1/2}D,\quad D_{jj}=\sqrt{coverage_j}\mathbf1_{coverage_j\ge0.5}
+$
+
+$
+\widehat R_{it}=R^{sat}_{it}\exp\left[\operatorname{clip}((1-2^{-t})Z_i^*\widehat\beta,-1,1)\right]
+$
+
+$
+\widehat M=\arg\min_{M: L_M\le L_{best}+SE_{best}}d_M
+$
+
+| Model | Original WAPE | External WAPE |
+|---|---:|---:|
+| Saturation | 41.08% | 60.21% |
+| Baseline factors | 47.72% | 72.14% |
+| Investment | 41.25% | 60.18% |
+| Liquidity | 48.58% | 66.40% |
+| All factors | 53.33% | 60.21% |
+| No liquidity | 51.26% | 60.16% |
+| No investment | 51.86% | 63.82% |
+| Nested selection | 51.57% | 66.40% |
+| One-standard-error rule | 39.96% | 60.21% |
+
+外部准确率无实质提升；保守选择在外部恢复衰减基准，原样本WAPE降低1.12个百分点。暂不迁移系数或修改估值。Anthropic现有财报输入对应9个月CFO利润率19.76%、资本开支率2.78%、CFO减资本开支5.644B、现金及投资/未来12个月总承诺1.86倍、至2030年承诺/现金及投资3.43倍、融资/CFO16.86倍、前五大直接客户收入25%、HHI下界0.0125。总承诺覆盖率不等于现金跑道或净现金流预测；现金含投资，与历史现金等价物口径不同。CFO减资本开支不等于FCFF，算力租赁与承诺需按现金时点核算且避免重复扣减。[数据](data/dotcom_structural_factors.csv) · [代码](evaluation/structural_factors.py)
+
 ### 8.3 Anthropic 公司披露参数及敏感性
 
 [正式招股书](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm)及[费用披露表](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm)支持[公司特定数据](data/company_specific_anchors.csv)：TTM 消费超过十万美元的客户 11,900+，超过百万美元 1,900+，超过千万美元约 250，第一组贡献 26.1B 收入。收入阈值嵌套，不等于企业生命周期；900% NRR 为特定旧客户群同比季度收入比，排除个人固定订阅，不等于公司未来增长率。
@@ -674,7 +712,7 @@ c_{\mathrm{compute}}=18.808/33.242=56.58\%,\quad c_{\mathrm{other}}=15.694/33.24
 
 ## 9. 复现与数据
 
-50项本地测试通过，含基准嵌套、概率行和、累计晋级、人口守恒、预算边界、初始账单及可复现性。完整估值模型仍未完成样本外验证。主要未识别参数：国家级付费率、真实企业收入权重、资金来源、财务转移、市场捕获及供应商迁移。
+54项本地测试通过，含基准嵌套、概率行和、累计晋级、人口守恒、预算边界、初始账单及可复现性。完整估值模型仍未完成样本外验证。主要未识别参数：国家级付费率、真实企业收入权重、资金来源、财务转移、市场捕获及供应商迁移。
 
 ```bash
 python -m models.joint_customer_states
@@ -685,6 +723,7 @@ python -m evaluation.fundamental_growth
 python -m evaluation.external_validation
 python -m evaluation.competing_risk
 python -m evaluation.covariance_factors
+python -m evaluation.structural_factors
 python -m unittest discover -s evaluation -v
 ```
 
