@@ -1,0 +1,8 @@
+item,value,source,as_of
+risk_free_10y,0.0500,https://tradingeconomics.com/united-states/government-bond-yield (10y 4.86%-5.16% during Nov 2026; midpoint),2026-11-16
+implied_erp,0.0414,https://pages.stern.nyu.edu/adamodar/New_Home_Page/home.htm (implied ERP Sep 1 2026; TTM adjusted payout),2026-09-01
+implied_erp_high,0.0605,same page (average CF yield last 10 years variant),2026-09-01
+implied_erp_low,0.0356,same page (normalized earnings and payout variant),2026-09-01
+tax_rate,0.25,model convention (models/accounting.py),
+anthropic_debt_usd_b,109.742,anthropic_accounting_audit.csv adjusted_convertibles (424B4),2026-11
+anthropic_equity_usd_b,1200,IPO-terms market cap reference used in README,2026-11

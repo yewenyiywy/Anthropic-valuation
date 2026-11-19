@@ -10,26 +10,26 @@ Snapshot 2026-11-19. USD billions unless noted. **Research model: the [release g
 
 | Mean | Median | P5 | P95 | P(equity < 0) |
 |---:|---:|---:|---:|---:|
-| 252.85 | 184.49 | −103.42 | 904.48 | 25.6% |
+| 490.02 | 385.76 | −71.66 | 1,475.20 | 13.2% |
 
 **Structural scenarios**, normal macro regime:
 
 | Scenario | Revenue y1 | y5 | y10 | EV | Equity |
 |---|---:|---:|---:|---:|---:|
-| Bear | 50.67 | 24.88 | 21.68 | −306.95 | −205.14 |
-| Base | 100.12 | 221.47 | 328.27 | 147.41 | 249.22 |
-| Bull | 115.69 | 396.70 | 734.42 | 1718.48 | 1820.30 |
+| Bear | 50.67 | 24.88 | 21.68 | −356.80 | −254.99 |
+| Base | 100.12 | 221.47 | 328.27 | 392.82 | 494.63 |
+| Bull | 115.69 | 396.70 | 734.42 | 2760.30 | 2862.11 |
 
 **Reverse DCF** (`python -m evaluation.reverse_dcf --equity 1200`): what one lever must become for equity to equal about $1.2T, the IPO-terms market cap. Diagnostic only.
 
 | Lever, others at base | Base | Needed |
 |---|---:|---:|
-| All parameters toward bull (factor z) | 0 | 0.75 |
-| WACC | 12% | 5.3% |
-| Survivor terminal growth g | 3% | 10.7% |
-| Capture, demand growth, acquisition or volume alone | — | not reachable (max ≈ 249–263) |
+| All parameters toward bull (factor z) | 0 | 0.47 |
+| WACC | 8.86% | 5.67% |
+| Survivor terminal growth g | 3% | 6.83% |
+| Capture, demand growth, acquisition or volume alone | — | not reachable (max ≈ 495–519) |
 
-At z = 0.75 the steady-state after-tax margin is 26.4%, the 89th percentile of 18 cloud-software SBC-adjusted outcomes (§3.2); the base 15.75% is the 67th.
+At z = 0.47 the steady-state after-tax margin is 22.8%, the 83rd percentile of 18 cloud-software SBC-adjusted outcomes (§3.2); the base 18.4% is the 72nd. A compute cost ratio of 10.8% (base 45.5%) would also reach 1.2T alone.
 
 ## 1. Valuation model
 
@@ -197,7 +197,7 @@ Y_t=R_t-\max\big(K^{\mathrm{floor}}_t,\;c_tR_t\big)-(o_t+x_t)R_t,\qquad FCF_t=Y_
 \theta_t=\theta^\ast+(\theta_0-\theta^\ast)\,2^{-t/H},\qquad \theta=(c,o,x),\qquad H=3
 ```
 
-$\theta_0$ = (56.6%, 47.2%, 2.8%) is reported nine-month compute, other opex and capex. $\theta^\ast$ is the scenario steady state, (48%, 25%, 6%) in the base case. $H$ = 3 years is the development estimate from 18 cloud-software margin paths (§3.2). `cost_half_life=None` jumps to $\theta^\ast$ at $t=1$.
+$\theta_0$ = (56.6%, 47.2%, 2.8%) is reported nine-month compute, other opex and capex. $\theta^\ast$ is the scenario steady state, (45.5%, 24.0%, 6%) in the base case, estimated from comparables (§3.8). $H$ = 3 years is the development estimate from 18 cloud-software margin paths (§3.2). `cost_half_life=None` jumps to $\theta^\ast$ at $t=1$.
 
 #### 1.2.2 Compute commitments
 
@@ -239,7 +239,7 @@ $e$ counts only zero-recovery **distress** exits; acquisitions pay shareholders 
 \mu=\big(m,\;0.2m,\;\min\Big(0.6,\frac{4m}{3}\Big),\;0\big),\qquad m=(1-c^\ast-o^\ast-x^\ast)(1-0.25)
 ```
 
-Base $m$ = 15.75%. Bear's own cost ratios are loss-making, so its tail is negative.
+Base $m$ = 18.4%; bear 8.9%, bull 27.9% (§3.8). Bear equity is still negative because revenue shrinks below the committed compute floor.
 
 ### 1.4 Equity bridge
 
@@ -267,11 +267,11 @@ One common factor moves every scenario parameter together toward bear ($z<0$) or
 | Initial volume / price | 1.45 / .65 | 1.65 / .78 | 1.85 / .88 |
 | Acquisition / replacement | .10 / .50 | .20 / 1 | .30 / 1.25 |
 | Subscription growth | 3% | 12% | 22% |
-| Steady compute / other / capex | .65 / .35 / .06 | .48 / .25 / .06 | .35 / .20 / .05 |
+| Steady compute / other / capex | .589 / .233 / .06 | .455 / .240 / .06 | .345 / .233 / .05 |
 | Terminal capture $c_{10}$ | 15% | 41% (held) | 50% |
 | Distress exit $e$ / decline / renewal | .00827 / .30 / .03 | .00132 / .20 / .08 | .0009 / .10 / .15 |
 | Terminal growth $g$ | 2.5% | 3% | 3.5% |
-| WACC | 15% | 12% | 10% |
+| WACC | 9.38% | 8.86% | 7.68% |
 
 ## 3. Evidence and validation
 
@@ -358,20 +358,51 @@ The model ranks fundamentals well but not market caps; equity error is mostly mu
 
 | Variant | Equity |
 |---|---:|
-| Base | 249.22 |
-| No latent health | 152.68 |
-| No extra duration | 252.08 |
-| No vendor transitions | 204.25 |
-| All disabled (open lifecycle) | 123.62 |
-| Constant winter / boom | 54.35 / 266.22 |
-| Costs jump to steady state at t = 1 | 322.58 |
-| 1,024-path mean, as-adjusted bridge: original / reported compute ratio held / both ratios held | 220.52 / 135.26 / −153.05 |
+| Base | 494.63 |
+| No latent health | 317.36 |
+| No extra duration | 499.11 |
+| No vendor transitions | 404.64 |
+| All disabled (open lifecycle) | 259.22 |
+| Constant winter / boom | 145.51 / 524.66 |
+| Costs jump to steady state at t = 1 | 583.92 |
+
+### 3.8 Comparable-based costs and discount rate (development, [preregistration](evaluation/margin_scale_preregistration.md))
+
+`python -m evaluation.margin_scale`. Replaces the hand-set steady cost ratios and WACC. Labels were public before registration, so this is development evidence, not a blind test.
+
+**Five-year-ahead operating margin**, 368 issuer-years, 39 issuer families, leave-one-family-out ([panel](data/margin_scale_panel.csv): SEC XBRL for 40 listed software/cloud/internet issuers plus AWS, Google Cloud and Microsoft Intelligent Cloud segment tables from 10-Ks; survivor-biased).
+
+| Model | MAE (pp) | Bias (pp) |
+|---|---:|---:|
+| Hold current margin | 11.14 | −6.72 |
+| Pooled mean | 15.35 | −0.10 |
+| **Linear partial adjustment** | **9.24** | −0.09 |
+| Scale-convergence | 9.56 | −0.15 |
+| Ridge | 10.03 | −0.16 |
+| Gradient boosting | 10.48 | −0.10 |
+| Gaussian process | 12.39 | +1.52 |
+| MLP 16-16 (deep-learning check) | 11.38 | −0.24 |
+
+No ML model beats the linear baseline, so none is promoted. The fitted adjustment (slope 0.60 over 5 years, long-run 27.1%) implies a 6.8-year margin half-life; with $H$ = 6.8 instead of 3 the base equity is 417.5.
+
+**Steady margin $m^\ast$**: three-year mean operating margin of platform issuers with revenue ≥ $20B (MSFT 45.7%, MS Intelligent Cloud 42.2%, Meta 39.4%, Adobe 34.1%, AWS 33.2%, Alphabet 30.5%, Oracle 30.1%, Netflix 25.6%, Intuit 25.3%, Salesforce 17.8%, Google Cloud 14.3%). P10/P50/P90 = 17.8% / 30.5% / 42.2% → bear/base/bull. Compute share of costs = Microsoft Intelligent Cloud cost of revenue / (cost of revenue + opex), FY2024–26: 59.6% / 65.1% / 71.6%.
+
+**WACC**: CAPM, 10-year Treasury 5.0%, Damodaran implied ERP 4.14% (Sep 2026), unlevered 5-year betas of 13 peers (GOOGL, MSFT, AMZN, NVDA, ORCL, META, CRM, NOW, SNOW, DDOG, NET, PLTR, ADBE; [inputs](data/wacc_inputs.csv)), relevered at Anthropic D/E 0.09. Bear/base/bull = beta P75/P50/P25 = 9.38% / 8.86% / 7.68%. ERP 3.56% / 6.05% gives 8.31% / 10.65%.
+
+| Change from previous hand-set base | Base equity |
+|---|---:|
+| Previous (cost .48/.25, WACC 12%) | 249.22 |
+| Estimated costs, WACC 12% | 292.5 |
+| Previous costs, estimated WACC | 421.1 |
+| Both estimated | 494.63 |
+
+Still hand-set: customer-state parameters, capex ratio, terminal growth, ceilings.
 
 ## 4. Reproduce
 
 ```bash
 pip install numpy scipy
-python -m unittest discover -s evaluation -p 'test_*.py'   # 129 tests
+python -m unittest discover -s evaluation -p 'test_*.py'   # 134 tests
 python -m evaluation.validation_gate --audit
 python -m models.joint_customer_states
 python -m evaluation.reverse_dcf --equity 1200
@@ -380,6 +411,7 @@ python -m evaluation.margin_development
 python -m evaluation.growth_persistence
 python -m evaluation.saas_exit
 python -m evaluation.cloud_equity
+python -m evaluation.margin_scale
 ```
 
 Data definitions: [data/README.md](data/README.md). Protocol: [MODEL_VALIDATION_PROTOCOL.md](MODEL_VALIDATION_PROTOCOL.md), [AGENTS.md](AGENTS.md).

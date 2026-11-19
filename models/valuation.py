@@ -32,19 +32,24 @@ def reverse_dcf(ev, wacc, growth, margin):
     return ev * (wacc-growth) / margin
 
 # All entries here are illustrative stresses, not measured customer mix or forecasts.
+# cost_ratio, other_ratio and wacc are estimated, not hand-set: see
+# evaluation/margin_scale.py (P10/P50/P90 steady operating margin of large
+# software/cloud platforms; Microsoft Intelligent Cloud compute share of costs;
+# CAPM with relevered peer betas, 10y Treasury and Damodaran implied ERP).
+# test_margin_scale.py fails if these drift from the estimator.
 SCENARIOS = {
     "bear": dict(startup=.55, trial=.25, s5=.40, funding=.70, conversion=.20,
                  rollout=2, volume=1.45, price=.65, share=.90, new=.10,
-                 subscription_growth=.03, cost_ratio=.65, other_ratio=.35, capex=.06,
-                 wacc=.15, terminal_growth=.025),
+                 subscription_growth=.03, cost_ratio=.5885, other_ratio=.2333, capex=.06,
+                 wacc=.0938, terminal_growth=.025),
     "base": dict(startup=.40, trial=.30, s5=.54, funding=.90, conversion=.35,
                  rollout=3, volume=1.65, price=.78, share=.96, new=.20,
-                 subscription_growth=.12, cost_ratio=.48, other_ratio=.25, capex=.06,
-                 wacc=.12, terminal_growth=.03),
+                 subscription_growth=.12, cost_ratio=.4548, other_ratio=.2400, capex=.06,
+                 wacc=.0886, terminal_growth=.03),
     "bull": dict(startup=.25, trial=.20, s5=.65, funding=1.05, conversion=.50,
                  rollout=4, volume=1.85, price=.88, share=1.0, new=.30,
-                 subscription_growth=.22, cost_ratio=.35, other_ratio=.20, capex=.05,
-                 wacc=.10, terminal_growth=.035),
+                 subscription_growth=.22, cost_ratio=.3448, other_ratio=.2334, capex=.05,
+                 wacc=.0768, terminal_growth=.035),
 }
 
 # Illustrative effective demand ceilings (not observed TAM), subscription overlap,
