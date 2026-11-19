@@ -1,0 +1,11 @@
+rank,company,cap_sep8_1999,cy99e,cy00e,cy00_actual,market_ev_sep6,driver,source_actual
+1,Cisco,222.2,,,,,network hardware,
+2,AOL,104.2,5.595,7.106,7.703,105.3728,subscription and advertising,https://www.sec.gov/Archives/edgar/data/1105705/000095013002001845/d10k405.htm
+3,Yahoo,39.7,.530,.756,1.110178,41.8973,advertising,https://www.sec.gov/Archives/edgar/data/1011006/000104746905006235/a2153243z10-k.htm
+4,Amazon,20.7,1.343,1.900,2.761983,19.5972,retail sales,https://www.sec.gov/Archives/edgar/data/1018724/000103221002000059/d10k405.htm
+5,eBay,17.3,.2151,.3513,.431424,16.2565,marketplace fees,https://www.sec.gov/Archives/edgar/data/1065088/000089161802001364/f79949e10-k.htm
+6,Excite@Home,14.1,.4121,.699,,15.345,broadband and advertising,
+7,Broadcom,12.3,,,,,semiconductor sales,
+8,Juniper Networks,9.7,,,,,network equipment,
+9,Internet Capital Group,9.4,,,,,portfolio investments,
+10,Priceline,9.2,.481,.804,1.235396,9.1935,travel transactions,https://www.sec.gov/Archives/edgar/data/1075531/000110465904007430/a04-3266_110k.htm
