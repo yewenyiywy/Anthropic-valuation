@@ -566,6 +566,42 @@ Ridge扩展使用初始增长率（非完整财年时中性处理）、公司规
 
 [数据及财报来源](data/dotcom_external_cohort.csv) · [复现代码](evaluation/external_validation.py)
 
+#### 竞争性退出与并购口径
+
+原十家公司独立存续、破产、合并计数为8、1、1；使用对称Dirichlet(0.5)先验估计五年概率，再构造复现终点概率的年度恒定风险转移矩阵。破产回收或合并对价不预设为零。估值公式为扩展设计，并非识别出的Anthropic风险参数或已修改基准DCF。
+
+$
+\widehat p_k=\frac{n_k+1/2}{N+3/2},\quad s=\widehat p_S^{1/5},\quad q_k=(1-s)\frac{\widehat p_k}{1-\widehat p_S}
+$
+
+$
+P=\begin{pmatrix}s&q_B&q_M\\0&1&0\\0&0&1\end{pmatrix}
+$
+
+$
+V_0=\mathbb E\left[\sum_{t=1}^{\min(T,\tau)}\frac{FCFF_t}{(1+r)^t}+\frac{L_\tau\mathbf1_{\tau\le T}}{(1+r)^\tau}\right]
+$
+
+$
+R_t=R_t^{organic}+R_t^{acquired}-R_t^{disposed}
+$
+
+$
+\Delta NPV=p_{close}\left(\sum_{t=1}^{H}\frac{\Delta FCFF_t}{(1+r)^t}-C_{deal}\right)
+$
+
+| 五年状态 | 后验均值 | 外部观察比例 |
+|---|---:|---:|
+| 独立存续 | 73.91% | 75% |
+| 破产 | 13.04% | 12.5% |
+| 合并 | 13.04% | 12.5% |
+
+外部多分类Brier分数0.406，恒定存续基准0.500，均匀基准0.667；对数损失0.736，均匀基准1.099。两类退出的95%边际后验区间约1%—37%，样本已被观察过，故为回顾性验证，并非新鲜独立样本；当前是汇总风险，非公司特定风险。
+
+并购口径核对：PayPal占eBay 2003年收入20.21%；Jamba占VeriSign 2004年收入15.50%。单独剔除Jamba后，VeriSign衰减模型APE从84.19%降至81.28%，并购仅解释部分误差。Yahoo披露美国并购同比增量与分部收入不同，不混合拟合。剔除已披露部分不等于完整内生收入。未来并购概率、交易成本及现金流须单独估计；禁止将已实现并购作为早期预测的输入，负净现值交易降低估值。暂不更改未经验证的基准股权估值。
+
+[退出证据](data/dotcom_exit_events.csv) · [并购证据](data/dotcom_acquisition_components.csv) · [模型](evaluation/competing_risk.py)
+
 ### 8.3 Anthropic 公司披露参数及敏感性
 
 [正式招股书](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm)及[费用披露表](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm)支持[公司特定数据](data/company_specific_anchors.csv)：TTM 消费超过十万美元的客户 11,900+，超过百万美元 1,900+，超过千万美元约 250，第一组贡献 26.1B 收入。收入阈值嵌套，不等于企业生命周期；900% NRR 为特定旧客户群同比季度收入比，排除个人固定订阅，不等于公司未来增长率。
@@ -601,7 +637,7 @@ c_{\mathrm{compute}}=18.808/33.242=56.58\%,\quad c_{\mathrm{other}}=15.694/33.24
 
 ## 9. 复现与数据
 
-44项本地测试通过，含基准嵌套、概率行和、累计晋级、人口守恒、预算边界、初始账单及可复现性。完整估值模型仍未完成样本外验证。主要未识别参数：国家级付费率、真实企业收入权重、资金来源、财务转移、市场捕获及供应商迁移。
+47项本地测试通过，含基准嵌套、概率行和、累计晋级、人口守恒、预算边界、初始账单及可复现性。完整估值模型仍未完成样本外验证。主要未识别参数：国家级付费率、真实企业收入权重、资金来源、财务转移、市场捕获及供应商迁移。
 
 ```bash
 python -m models.joint_customer_states
@@ -610,6 +646,7 @@ python -m evaluation.five_year
 python -m evaluation.growth_comparison
 python -m evaluation.fundamental_growth
 python -m evaluation.external_validation
+python -m evaluation.competing_risk
 python -m unittest discover -s evaluation -v
 ```
 
