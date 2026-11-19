@@ -1,0 +1,9 @@
+company,r1998,r1999,r2004,status,source_input,source_outcome,scope
+BroadVision,.050911,.115514,.078004,observed,https://www.sec.gov/Archives/edgar/data/920448/000091205701506549/a2043641z10-k.txt,https://www.sec.gov/Archives/edgar/data/920448/000104746905006471/a2153186z10-k.htm,reported retrospective revenue
+CMGI,.092197,.186389,.397422,observed,https://www.annualreports.com/HostedData/AnnualReportArchive/m/NASDAQ_MLNK_2000.pdf,https://www.sec.gov/Archives/edgar/data/914712/000119312504171334/d10k.htm,July fiscal year; restated inputs and portfolio disposals
+DoubleClick,.138724,.258294,.301623,observed,https://www.sec.gov/Archives/edgar/data/1049480/000095012303003381/y84350e10vk.htm,https://www.sec.gov/Archives/edgar/data/1049480/000095012305003222/y06461e10vk.htm,business acquisitions and disposals
+RealNetworks,.066377,.131242,.266719,observed,https://www.sec.gov/Archives/edgar/data/1046327/000089102002000225/v79646e10-k.htm,https://www.sec.gov/Archives/edgar/data/1046327/000095012405001417/v06100e10vk.htm,reported retrospective revenue
+VeriSign,.038930,.084776,1.166455,observed,https://investor.verisign.com/static-files/86df71e9-91a3-4744-ab88-c0492b69e604,https://www.sec.gov/Archives/edgar/data/1014473/000119312505052424/d10k.htm,Network Solutions acquisition and sale
+InfoSpace,.009631927,.037390303,.2494,observed,https://www.sec.gov/Archives/edgar/data/1068875/000103221000001839/0001.txt,https://www.sec.gov/Archives/edgar/data/1068875/000119312505041749/d10k.htm,2004 rounded in MD&A; acquisitions and discontinued operations
+Exodus Communications,,,,bankruptcy,,,2001 bankruptcy; no comparable standalone endpoint
+Go2Net,,,,acquired,,,2000 acquisition by InfoSpace; no standalone endpoint
