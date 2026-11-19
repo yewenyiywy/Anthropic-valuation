@@ -10,7 +10,7 @@ from .customer_cohorts import (INPUTS, hazards, customer_retention, SCENARIOS,
     observations, commitment_floor, lifecycle_tail, overlap_factor, benchmark,
     enterprise_cap, MENLO_DEPLOYMENT, annual_probability, LARGE_DELIST_5Y,
     LARGE_US_FAILURE)
-from .valuation import ROOT, cost_ratios
+from .valuation import ROOT, cost_ratios, EXIT_HAZARD
 
 STATES=('seed0','seed1','seed2','seed3','seed4plus','scaleup','sme','large','closed')
 GROUP=(0,0,0,0,0,1,2,3)
@@ -81,7 +81,7 @@ def migrate(values,P,name,commercial=True):
 def forecast_markov(name,o=None,migration=True,birth_multiplier=1):
     o=observations() if o is None else o; p=dict(SCENARIOS[name]); a=INPUTS[name]; b=PARAM[name]
     P=transition(name,migration); w=spread(a['weights']); r=customer_retention(name)
-    p['exit']=dict(bear=annual_probability(LARGE_DELIST_5Y,5),base=hazards()[-1],bull=LARGE_US_FAILURE)[name]
+    p['exit']=EXIT_HAZARD[name]
     api=o['run_rate']*o['consumption_9m26']/o['revenue_9m26']; sub=o['run_rate']-api
     personal0=sub*p['personal']; personal_raw=personal0
     trial=[api*x*p['trial'] for x in w]; live=[api*x*(1-p['trial']) for x in w]; seats=[(sub-personal0)*x for x in w]

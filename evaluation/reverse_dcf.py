@@ -16,8 +16,8 @@ LEVERS = {
     'acquisition_rate': ('scenario', 'new', 0., 2., 'new-customer revenue as a share of existing (fades by year 8)'),
     'initial_volume': ('scenario', 'volume', 1., 6., 'initial token-volume growth multiplier (fades by year 8)'),
     'compute_cost_ratio': ('scenario', 'cost_ratio', .05, .9, 'variable compute cost / revenue'),
-    'wacc': ('scenario', 'wacc', .05, .20, 'discount rate'),
-    'terminal_growth': ('scenario', 'terminal_growth', -.05, .11, 'survivor long-run growth after year 10'),
+    'wacc': ('scenario', 'wacc', .045, .20, 'discount rate'),
+    'terminal_growth': ('scenario', 'terminal_growth', -.05, .08, 'survivor long-run growth after year 10'),
 }
 
 def equity(kind, key, x):
@@ -55,8 +55,9 @@ def steady_margin(lever, x):
     return dict(steady_after_tax_margin=m, peer_percentile=percentile(m))
 
 def run(target):
+    from models.valuation import SCENARIOS
     base = forecast_joint()[2]
-    ref = dict(scenario_factor=0., acquisition_rate=.20, initial_volume=1.65, terminal_capture=initial_capture(), demand_growth=1., compute_cost_ratio=.48, wacc=.12, terminal_growth=.03)
+    ref = dict(scenario_factor=0., acquisition_rate=.20, initial_volume=1.65, terminal_capture=initial_capture(), demand_growth=1., compute_cost_ratio=SCENARIOS['base']['cost_ratio'], wacc=SCENARIOS['base']['wacc'], terminal_growth=SCENARIOS['base']['terminal_growth'])
     return dict(status='diagnostic: implied single-lever assumptions, not a forecast',
                 target_equity=target, base_equity=base,
                 base_margin=steady_margin('wacc', None),

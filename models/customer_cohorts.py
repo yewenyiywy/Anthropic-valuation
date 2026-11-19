@@ -4,7 +4,7 @@ All USD billions. Customer revenue weights and revenue-weighted cancellation
 rates are scenario assumptions, NOT estimated from published customer counts.
 """
 import csv
-from .valuation import ROOT, SCENARIOS, observations, commitment_floor, lifecycle_tail, overlap_factor, cost_ratios
+from .valuation import ROOT, SCENARIOS, observations, commitment_floor, lifecycle_tail, overlap_factor, cost_ratios, EXIT_HAZARD
 from .industry_calibration import enterprise_cap, MENLO_DEPLOYMENT, annual_probability, LARGE_DELIST_5Y, DISTRESS_EXIT_FRACTION, LARGE_US_FAILURE
 from .netflix_benchmark import benchmark
 
@@ -39,7 +39,7 @@ def customer_retention(scenario,d=None):
 def forecast_cohorts(name, o=None, no_commercial_loss=False, top5_cut=0):
     o=observations() if o is None else o
     p=dict(SCENARIOS[name]); a=INPUTS[name]; w=a['weights']
-    p['exit']=dict(bear=annual_probability(LARGE_DELIST_5Y,5),base=hazards()[-1],bull=LARGE_US_FAILURE)[name]
+    p['exit']=EXIT_HAZARD[name]
     planned_r=customer_retention(name)
     r=planned_r if not no_commercial_loss else [1-x for x in hazards()]
     api=o['run_rate']*o['consumption_9m26']/o['revenue_9m26']; sub=o['run_rate']-api
