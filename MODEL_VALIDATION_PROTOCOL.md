@@ -89,7 +89,18 @@ test labels. Record all experiments, including failures, with parameter bounds,
 objective, random seeds, hashes and reproducible commands. Fit revenue, margin,
 FCFF, survival/renewal, WACC and capital structure components on their appropriate
 training labels. Optimize equity market-cap error separately; revenue-only tuning
-does not qualify. Use a zero-safe primary loss:
+does not qualify.
+
+Before fitting, inspect the Jacobian of all observables with respect to scaled
+parameters, its singular values, rank and near-null directions. Check exact
+invariances and distinguish local rank from global identification. Do not claim
+separate estimated parameters when only their product or sum is identifiable.
+Constrain them with independent as-of measurements, estimate identifiable
+composites, or carry the unidentified direction as uncertainty. Regularization
+does not create information. Repeat rank and sensitivity checks across folds and
+relevant operating regimes; do not use synthetic recovery as historical evidence.
+
+Use a zero-safe primary loss:
 
 ```math
 L=\frac{1}{n}\sum_i|\log(1+\widehat V_i)-\log(1+V_i)|+\lambda\|\theta\|_2^2
