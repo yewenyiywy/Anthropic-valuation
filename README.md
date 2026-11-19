@@ -90,6 +90,40 @@ Here L is production consumption, T trial consumption, F conditional funding/spe
 Base year-one gross lost spend from existing enterprise customers before expansion/new sales: 12.71B (4.71 closure proxy and 8.00 conditional commercial loss). Incremental top-five spend shock (25% of revenue proxy) after normal attrition: 25%/50%/100% cut -> equity 125.33/100.59/51.10B. Concentration is nine-month historical, not observed October mix. Attribution compares closure-only 187.11B vs 150.07B with commercial loss holding acquisition policy fixed; this is not a fitted causal effect. Actual NRR ~900% Q3 2026 compares prior-year quarterly qualified customers, excluding individual fixed subscriptions; not a logo survival statistic and incompatible with extrapolating the historical growth indefinitely. 16 local tests pass; no forward predictive backtest yet.
 
 
+### Open customer lifecycle Markov chain (latest)
+
+Conditional base equity **$134.40B**. Run `python -m models.customer_markov`. This is a scenario extension, not a fitted customer forecast. [Source anchors](data/markov_anchors.csv) and [model](models/customer_markov.py) distinguish observed financing incidence from assumed operating transitions.
+
+Seed tenure states 0,1,2,3,4+, scaleup, mature SME, large, and permanent closure. New seed entrants are external; closure is absorbing. Dealroom's European 2016–18 seed cohort (3,075) reached Series A at 6/18/27/31% cumulatively after 1/2/3/4 years. Carta US cohorts reached 12.9% in one year (2024 Q3) and 32.7% in two years (2021 Q1), different vintages. Base incidence 10/22/31/36% interpolates scenario anchors, not an estimated cohort. The competing-risk conversion uses remaining seed risk mass (not 1 minus cumulative financing alone).
+
+```math
+g_k=\frac{F_k-F_{k-1}}{U_{k-1}},\quad U_k=U_{k-1}(1-g_k-b_k-h_k)
+```
+
+```math
+\mathbf n_{t+1}=\mathbf n_tP_t+B_t\mathbf e_0,\quad \sum_j P_{ij}=1
+```
+
+Base seed→scaleup hazards by tenure are 10/16.91/19.79/17.97/3.5%; seed→SME 4%; closure 15.03%. Scaleup→SME/large 12/2%, SME→large 0.5%, large→SME 0.5%, all operational transitions assumed. Census high-growth share (under 8% among young continuing firms in 2020) is a reality check, not a maturation probability. 1,000 newly seed-funded firms in base year 10: 37.9 remain seed, 64.3 scaleup, 193.0 SME, 34.4 large, 670.4 closed. Not an observed cohort.
+
+```math
+V_{j,t+1}=\sum_i V_{i,t}P_{ij}\frac{s_i}{1-h_i}m_{ij}+N_{j,t}
+```
+
+Revenue mass uses the count matrix as a proxy conditional on revenue-independent migration; m upgrades spending (base 1.35), downgrades 0.75. Deployment and billing retain separate ledgers, and retention is conditional on survival. No duplicate closure. New entrant revenue replaces 20% of planned new API sales, constrained by financing budget; remaining sales are existing firms adopting Claude (not an independently measured finite pool yet). NVCA 2025 US pre-seed/seed: 5,049 deals, $22.3B. Base assumes global eligible multiplier 2, unique-company factor .75, Claude capture .25, 5% of average round spent annually on Claude. Potential newly paying firms 1,893 and revenue ceiling $0.418B/year. Deals are not unique births and ARPA is not observed. Non-VC births, customer reacquisition, M&A and correlations remain unresolved.
+
+```math
+B_t=D_{US}G u c,\quad A=\frac{K_{US}}{D_{US}}f,\quad R_{birth,t}=\min(0.2J_t,B_tA)
+```
+
+| Scenario | Revenue Y1 | Y5 | Y10 | EV | Equity | No migration equity | No new seed equity |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Bear |49.09|18.08|9.56|-330.42|-228.61|-231.03|-229.33|
+| Base |96.31|171.58|182.93|32.59|134.40|112.04|129.88|
+| Bull |115.69|396.70|612.56|823.63|925.44|903.80|914.23|
+
+21 local tests pass including stochastic row sums, cumulative financing incidence, population conservation and birth-budget bounds. These are numerical validations, not predictive backtests.
+
 ## Mathematical valuation methodology
 
 All monetary variables are in **USD billions**, except unit prices. Time $t$ is measured in annual steps from the October 2026 run-rate snapshot. Quantities identified as assumptions are scenario inputs, not estimated facts.
