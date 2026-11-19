@@ -33,9 +33,9 @@ def health_matrix(regime):
         p[:,0]*=.70; p[:,2]*=1.15
     return p/p.sum(axis=1,keepdims=True)
 
-def lifecycle_kernel(name,regime,health=True,duration=True):
+def lifecycle_kernel(name,regime,health=True,duration=True,seed_hazards=None,seed_cif=None):
     """Substochastic live transition; residual is absorbing business closure."""
-    P=np.array(transition(name)); out=np.zeros((8,3,3,8,3,3))
+    P=np.array(transition(name,seed_hazards=seed_hazards,seed_cif=seed_cif)); out=np.zeros((8,3,3,8,3,3))
     H=health_matrix(regime) if health else np.eye(3)
     for i in range(8):
       for d in range(3):
@@ -95,9 +95,9 @@ def propagate(x,K,vs):
     x=np.einsum('idqv,ivw->idqw',x,vs)
     return (x.reshape(72,7).T@K).T.reshape(8,3,3,7)
 
-def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None,scenario_overrides=None,profile=None,growth_half_life=None):
+def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None,scenario_overrides=None,profile=None,growth_half_life=None,seed_hazards=None,seed_cif=None):
     if growth_half_life is not None and growth_half_life<=0: raise ValueError('positive half life required')
-    if profile is not None and (o is None or scenario_overrides is not None):
+    if profile is not None and (o is None or scenario_overrides is not None or seed_hazards is not None or seed_cif is not None):
         raise ValueError('company profile requires explicit company observations and scenario')
     o=observations() if o is None else o; p=dict(SCENARIOS[name]); a=INPUTS[name]; b=PARAM[name]
     path=[1]*10 if regime_path is None else list(regime_path)
@@ -131,7 +131,7 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
     for t,reg in enumerate(path,1):
         fade=max(0,1-(t-1)/7) if growth_half_life is None else 2**(-(t-1)/growth_half_life); mult=(1-(1-p['price'])*fade)*(1+(p['volume']-1)*fade)
         if reg not in cache:
-            cache[reg]=(lifecycle_kernel(name,reg,health,duration),np.array([vendor_matrix(name,g,reg,competition) for g in GROUP])) if profile is None else (profile['kernel'](reg),profile['vendor'](reg))
+            cache[reg]=(lifecycle_kernel(name,reg,health,duration,seed_hazards,seed_cif),np.array([vendor_matrix(name,g,reg,competition) for g in GROUP])) if profile is None else (profile['kernel'](reg),profile['vendor'](reg))
         K,vs=cache[reg]; pa=earn(trial)+earn(live); ps=earn(seats)
         loss=lambda x:sum(earn(x[i])*(1-r[GROUP[i]]) for i in range(8))
         new_api=(pa*p['new']*fade+loss(trial+live)*a['replacement']*(1-fade))*growth[reg]
