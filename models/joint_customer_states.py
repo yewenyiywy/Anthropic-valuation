@@ -95,7 +95,8 @@ def propagate(x,K,vs):
     x=np.einsum('idqv,ivw->idqw',x,vs)
     return (x.reshape(72,7).T@K).T.reshape(8,3,3,7)
 
-def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None,scenario_overrides=None,profile=None):
+def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None,scenario_overrides=None,profile=None,growth_half_life=None):
+    if growth_half_life is not None and growth_half_life<=0: raise ValueError('positive half life required')
     if profile is not None and (o is None or scenario_overrides is not None):
         raise ValueError('company profile requires explicit company observations and scenario')
     o=observations() if o is None else o; p=dict(SCENARIOS[name]); a=INPUTS[name]; b=PARAM[name]
@@ -128,7 +129,7 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
     pc=benchmark(a['personal_ratio'])['annual_revenue'] if profile is None else profile['personal_cap']; rows=[]
     cache={}
     for t,reg in enumerate(path,1):
-        fade=max(0,1-(t-1)/7); mult=(1-(1-p['price'])*fade)*(1+(p['volume']-1)*fade)
+        fade=max(0,1-(t-1)/7) if growth_half_life is None else 2**(-(t-1)/growth_half_life); mult=(1-(1-p['price'])*fade)*(1+(p['volume']-1)*fade)
         if reg not in cache:
             cache[reg]=(lifecycle_kernel(name,reg,health,duration),np.array([vendor_matrix(name,g,reg,competition) for g in GROUP])) if profile is None else (profile['kernel'](reg),profile['vendor'](reg))
         K,vs=cache[reg]; pa=earn(trial)+earn(live); ps=earn(seats)
