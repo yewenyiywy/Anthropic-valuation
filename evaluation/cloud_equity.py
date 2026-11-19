@@ -1,0 +1,58 @@
+"""Five-year equity market cap holdout; reduced-state finite lifecycle DCF."""
+import csv
+import numpy as np
+from evaluation.cloud_cycle import cohort
+from evaluation.external_validation import calibrate, forecast
+from evaluation.fundamental_growth import panel
+from evaluation.company_oos import metrics
+from models.valuation import ROOT, SCENARIOS, lifecycle_tail
+
+def inputs():
+    with (ROOT/'data/cloud_equity_cohort.csv').open() as f:
+        equity={r['company']:r for r in csv.DictReader(f)}
+    return [dict(r,**equity[r['company']]) for r in cohort()]
+
+def predict_value(r, train, theta, wacc=.12, retention=0):
+    q=dict(company=r['company'],r1998=r['r2019'],r1999=r['r2020'])
+    r0=float(r['r2020'])
+    r5=float(forecast(train,q,theta)['size_blend'])
+    m0=(float(r['cfo20'])-float(r['capex20']))/r0
+    # Historical CFO-capex is a levered cash flow proxy, not exact FCFF.
+    # Keep starting margin company-specific; fade toward shared mature margin.
+    g=np.log(r5/r0)/5
+    R=[r0*np.exp(g*t) for t in range(6)]
+    for t in range(6,11):
+        R.append(R[-1]*np.exp(g*max(0,1-(t-5)/5)))
+    margins=[m0+(0.15-m0)*t/10 for t in range(11)]
+    fcf=np.array(R)*np.array(margins)
+    p=dict(SCENARIOS['base'],wacc=wacc)
+    o=dict(commit_total=0,commit_to_2030=0,commit_next12m=0)
+    tail,_=lifecycle_tail(R[10],p,o)
+    net=float(r['cash20'])-float(r['debt20'])
+    v0=sum(fcf[t]/(1+wacc)**t for t in range(1,11))+tail+net
+    # Revalue only future cash flows at t=5; past cash flow is not counted twice.
+    v5=sum(fcf[t]/(1+wacc)**(t-5) for t in range(6,11))+tail*(1+wacc)**5+net+retention*sum(fcf[1:6])
+    return dict(value0=max(0,float(v0)),dcf=max(0,float(v5)),
+                flat_cap=float(r['cap20']),
+                constant_ps=float(r['cap20'])*r5/r0,
+                revenue5=r5,margin0=m0)
+
+def evaluate(rows=None):
+    train=panel()
+    theta=calibrate(train)
+    out=[]
+    for r in inputs() if rows is None else rows:
+        p=predict_value(r,train,theta)
+        for w in (.08,.10,.15):
+            p[f'dcf_{w}']=predict_value(r,train,theta,wacc=w)['dcf']
+        p['dcf_retained']=predict_value(r,train,theta,retention=1)['dcf']
+        out.append(dict(company=r['company'],actual=float(r['cap25']),actual0=float(r['cap20']),pred=p))
+    keys=['dcf','flat_cap','constant_ps','dcf_0.08','dcf_0.1','dcf_0.15','dcf_retained']
+    scores={k:metrics([(r['pred'][k],r['actual']) for r in out]) for k in keys}
+    for k in keys:
+        scores[k]['bias']=sum(r['pred'][k]-r['actual'] for r in out)/sum(r['actual'] for r in out)
+    return dict(rows=out,scores=scores,initial_dcf=metrics([(r['pred']['value0'],r['actual0']) for r in out]))
+
+if __name__=='__main__':
+    import json
+    print(json.dumps(evaluate(),indent=2))
