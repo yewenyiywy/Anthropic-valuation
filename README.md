@@ -208,6 +208,8 @@ The effective capture c includes geography, vendor share, application/infrastruc
 
 ## 5. Joint enterprise revenue state model
 
+**Parameter identification:** Full-engine synthetic recovery on three training regime paths and two held-out mixed paths: nine free parameters, financial-only Jacobian rank six, augmented with direct conversion, price, volume, capex and unit-cost measurements rank nine. Exact conversion × rollout and other expense + CapEx equivalences; local cost split nonidentification when commitments are nonbinding. Synthetic equity prediction errors near numerical zero do not establish empirical performance. See [experiment](evaluation/full_model_identification_protocol.md); `python -m evaluation.full_model_identification` (SciPy).
+
 **Age-dependent survival candidate.** Fit the BLS 2013 information-establishment cohort ages 1–5 using a Weibull survival curve: shape 0.642, scale 6.898 years. Ages 6–10 diagnostic survival MAE falls from 6.334 to 0.546 percentage points (same cohort, not independent). Seed-age hazard estimates: 25.14%, 14.97%, 12.56%, 11.20%, pooled 4+ 8.97%. With European seed-to-A CIF anchors and all mechanisms active, 128 matched macro paths yield $162.97B mean conditional equity vs $162.68B baseline. This is a component candidate, not full historical equity accuracy or parameter promotion. See [protocol](evaluation/full_model_survival_protocol.md); `python -m evaluation.full_model_survival`.
 
 ### 5.1 Customer groups, closure and commercial churn
