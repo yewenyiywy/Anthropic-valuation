@@ -1,5 +1,7 @@
 # Anthropic Valuation — Joint-State Lifecycle DCF
 
+**Validation correction:** Earlier aggregate joint-engine and equity-loss scores are archived surrogate experiments, not production-model performance or calibration evidence. Full production-model historical accuracy remains unmeasured. Missing inputs must be reconstructed or validated via fold-fitted imputation without disabling core mechanisms. See the [mandatory protocol](MODEL_VALIDATION_PROTOCOL.md).
+
 **English** · [简体中文](README.zh-CN.md)
 
 Research snapshot: 2026-11-19. All amounts are USD billions unless noted.
