@@ -41,11 +41,11 @@ $$
 **Initialize consumption and subscription revenue:**
 
 $$
-A_0=R_0\omega\approx64.084
+A_0=R_0\omega\approx64.085
 $$
 
 $$
-B_0=R_0(1-\omega)\approx16.916
+B_0=R_0(1-\omega)\approx16.915
 $$
 
 Source: [SEC prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm), [October run-rate disclosure](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074628/anthropicpbc-fwpjapanprospa.htm). Applying the historical mix to October is a proxy, not an observed October mix. Consumption does not mean strictly API revenue; subscription does not mean strictly consumer revenue.
