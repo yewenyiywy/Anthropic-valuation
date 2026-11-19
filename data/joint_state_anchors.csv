@@ -1,0 +1,13 @@
+metric,value,scope,source_url
+carta_closures_q1_24,254,Confirmed Carta account closures not risk denominator,https://carta.com/data/startup-shutdowns-q1-2024/
+carta_closure_count_yoy,0.58,Q1 2024 count increase not hazard ratio,https://carta.com/data/startup-shutdowns-q1-2024/
+carta_seed_closure_count_yoy,1.02,Q1 2024 seed count increase not hazard ratio,https://carta.com/data/startup-shutdowns-q1-2024/
+carta_a_closure_count_yoy,0.61,Q1 2024 A count increase not hazard ratio,https://carta.com/data/startup-shutdowns-q1-2024/
+carta_b_closure_count_yoy,1.33,Q1 2024 B count increase not hazard ratio,https://carta.com/data/startup-shutdowns-q1-2024/
+carta_2023_capital_yoy,-0.50,2023 funding cash change,https://carta.com/uk/en/data/state-of-private-markets-q4-2023/
+carta_2023_deal_yoy,-0.24,2023 funding deal count change,https://carta.com/uk/en/data/state-of-private-markets-q4-2023/
+ramp_overlap,0.79,2026 January Claude payer count also OpenAI,https://ramp.com/data/ai-index-february-2026
+ramp_switch_top,0.08,2026 September three-month average monthly top-token-spend provider change not cancellation,https://ramp.com/data/businesses-are-changing-ai-model-providers-more-often
+menlo_anthropic_api_share,0.55,2026 survey and market sizing United States investor estimate spend share,https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/
+menlo_openai_api_share,0.31,same,https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/
+menlo_google_api_share,0.09,same,https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/
