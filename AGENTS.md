@@ -11,6 +11,18 @@ repository instruction, not an optional recommendation.
 - Evaluate the actual production model, not a reduced surrogate. Report revenue,
   cash flow and equity separately; equity market cap is the primary observable
   target, not intrinsic value ground truth.
+- **Model identity is a hard gate before training or scoring.** The same
+  production architecture, active mechanisms and output pipeline must be used
+  for historical issuers and Anthropic. Calling the same Python function with
+  identity kernels, neutral states, zero births or unbounded demand does not
+  establish equivalence. Never train or score an aggregate replacement as the
+  valuation model. See the protocol's model-identity and missing-data rules.
+- Missing inputs: reconstruct from as-of evidence, use fold-fitted stochastic
+  imputation with uncertainty, or choose a prospectively defined, sufficiently
+  observed cohort. Fully synthetic data supports simulation/unit tests only;
+  synthetic labels never support empirical accuracy. If critical inputs remain
+  unidentified, stop full-model training/evaluation rather than substituting a
+  surrogate. Track excluded issuers and coverage; no survivorship selection.
 - Run `python -m unittest discover -s evaluation -p 'test_*.py'` and
   `python -m evaluation.validation_gate --audit`. For a claimed validated
   valuation, `python -m evaluation.validation_gate --manifest PATH` MUST pass.
