@@ -66,7 +66,7 @@ def commitment_floor(t, o):
     if t <= 19: return (o['commit_total']-o['commit_to_2030'])/15
     return 0
 
-def lifecycle_tail(revenue, p, o, start=10, horizon=30):
+def lifecycle_tail(revenue, p, o, start=10, horizon=30, margins=(.15,.03,.20,0)):
     """Finite Markov reward model: mature, declining, renewed, exited.
 
     Revenue mass tracks E[revenue * 1(state)], preserving path-dependent growth.
@@ -77,7 +77,7 @@ def lifecycle_tail(revenue, p, o, start=10, horizon=30):
     e,d,u=p['exit'],p['decline'],p['renew']
     P=((1-e-d-u,d,u,e),(.10,1-e-.10-u,u,e),(.40,d,1-e-.40-d,e),(0,0,0,1))
     growth=(1.00,.85,1.08,0)
-    margins=(.15,.03,.20,0) # after variable compute, other costs, capex and tax; assumptions
+    # margins are after variable compute, other costs, capex and tax; assumptions
     mass=[revenue,0,0,0]; prob=[1,0,0,0]; pv=0; tail=[]
     for t in range(start+1,horizon+1):
         mass=[sum(mass[i]*P[i][j] for i in range(4))*growth[j] for j in range(4)]
