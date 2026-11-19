@@ -1,0 +1,55 @@
+id,value,unit,period,kind,scope,source_url
+revenue_2023,0.041,USD bn,2023,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+revenue_2024,0.386,USD bn,2024,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+revenue_2025,4.585,USD bn,2025,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+revenue_9m25,2.545,USD bn,2025-09,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+revenue_9m26,33.242,USD bn,2026-09,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+consumption_9m26,26.3,USD bn,2026-09,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+cfo_9m26,6.569,USD bn,2026-09,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+capex_9m26,0.925,USD bn,2026-09,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+lease_prepay_9m26,1.955,USD bn,2026-09,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+financing_9m26,110.735,USD bn,2026-09,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+cash_investments,131.845,USD bn,2026-09,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+proforma_cash,212.684,USD bn,2026-09 pro forma,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+proforma_convertibles,110.873,USD bn,2026-09 pro forma,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+commit_total,900.9,USD bn,2026-11,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+commit_to_2030,451.6,USD bn,2026-11,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+commit_next12m,70.7,USD bn,2026-11,filing,Anthropic consolidated,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+run_rate,81,USD bn annualized,2026-10,filing,not realized annual revenue,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074628/anthropicpbc-fwpjapanprospa.htm
+top5,0.25,fraction,2026-09,filing,direct customer revenue not ultimate buyers,https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm
+ramp_adoption,0.568,fraction,2026-10/11,sample,Ramp US firms; share is token spend not global market,https://ramp.com/data/ai-index?stream=top
+ramp_anthropic_adoption,0.448,fraction,2026-10/11,sample,Ramp US firms; share is token spend not global market,https://ramp.com/data/ai-index?stream=top
+ramp_anthropic_share,0.493,fraction,2026-10/11,sample,Ramp US firms; share is token spend not global market,https://ramp.com/data/ai-index?stream=top
+ramp_openai_share,0.461,fraction,2026-10/11,sample,Ramp US firms; share is token spend not global market,https://ramp.com/data/ai-index?stream=top
+ramp_info,0.801,fraction,2026-10/11,sample,Ramp US firms; share is token spend not global market,https://ramp.com/data/ai-index?stream=top
+ramp_finance,0.743,fraction,2026-10/11,sample,Ramp US firms; share is token spend not global market,https://ramp.com/data/ai-index?stream=top
+ramp_manufacturing,0.628,fraction,2026-10/11,sample,Ramp US firms; share is token spend not global market,https://ramp.com/data/ai-index?stream=top
+ramp_professional,0.708,fraction,2026-10/11,sample,Ramp US firms; share is token spend not global market,https://ramp.com/data/ai-index?stream=top
+ramp_top1_spend,10199.2,USD per employee month,2026-10,sample,median within paying group,https://ramp.com/data/ai-index?stream=top
+ramp_top10_spend,800.84,USD per employee month,2026-10,sample,median within paying group,https://ramp.com/data/ai-index?stream=top
+ramp_median_spend,16.32,USD per employee month,2026-10,sample,median within paying group,https://ramp.com/data/ai-index?stream=top
+ramp_concentration,0.8,fraction,2026-11,sample,top 1% firms share of OpenAI and Anthropic spend in Ramp sample,https://ramp.com/data/ai-index-nov-2026
+ramp_engineering,0.72,fraction,2026-10,sample,classified spend by department,https://ramp.com/data/ai-index-nov-2026
+top1_vc_count,0.8,fraction,2026-10,proxy,company count not revenue; same underlying Ramp data,https://am.jpmorgan.com/content/dam/jpm-am-aem/global/en/insights/eye-on-the-market/ai-tracker-amv.pdf
+ai_vc_share,0.827,fraction,2026-Q3,sample,US venture deal value,https://nvca.org/pitchbook-nvca-venture-monitor/
+corporate_deal_share,0.879,fraction,2026-Q3,sample,deal value with corporate participation not dollar funding share,https://pitchbook.com/news/reports/q3-2026-fewer-deals-bigger-bets-how-corporate-capital-is-concentrating-us-ai-venture-activity
+survival_1994,0.543,fraction,1994,proxy,US establishments five year survival not AI,https://www.bls.gov/spotlight/2024/business-employment-dynamics-twentieth-anniversary/
+survival_2001,0.523,fraction,2001,proxy,US establishments five year survival not AI,https://www.bls.gov/spotlight/2024/business-employment-dynamics-twentieth-anniversary/
+survival_2003,0.553,fraction,2003,proxy,US establishments five year survival not AI,https://www.bls.gov/spotlight/2024/business-employment-dynamics-twentieth-anniversary/
+survival_2006,0.498,fraction,2006,proxy,US establishments five year survival not AI,https://www.bls.gov/spotlight/2024/business-employment-dynamics-twentieth-anniversary/
+survival_2010,0.56,fraction,2010,proxy,US establishments five year survival not AI,https://www.bls.gov/spotlight/2024/business-employment-dynamics-twentieth-anniversary/
+survival_2018,0.573,fraction,2018,proxy,US establishments five year survival not AI,https://www.bls.gov/spotlight/2024/business-employment-dynamics-twentieth-anniversary/
+pilot_abandon,0.5,fraction,2025,survey,at least half of GenAI projects abandoned after POC,https://www.gartner.com/en/articles/genai-project-failure
+ebit_impact,0.39,fraction,2025,survey,respondents reporting any enterprise EBIT impact,https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai-2025
+ai_nrr,0.48,fraction,2025,sample,median AI-native downstream software NRR not Anthropic,https://chartmogul.com/reports/saas-retention-the-ai-churn-wave/
+b2b_nrr,0.82,fraction,2025,sample,median B2B software NRR,https://chartmogul.com/reports/saas-retention-the-ai-churn-wave/
+age_18_29,0.58,fraction,2025,proxy,US adults ever used ChatGPT not paid Claude,https://www.pewresearch.org/chart/majorities-of-adults-under-50-now-use-chatgpt/
+age_30_49,0.41,fraction,2025,proxy,US adults ever used ChatGPT not paid Claude,https://www.pewresearch.org/chart/majorities-of-adults-under-50-now-use-chatgpt/
+age_50_64,0.25,fraction,2025,proxy,US adults ever used ChatGPT not paid Claude,https://www.pewresearch.org/chart/majorities-of-adults-under-50-now-use-chatgpt/
+age_65_plus,0.1,fraction,2025,proxy,US adults ever used ChatGPT not paid Claude,https://www.pewresearch.org/chart/majorities-of-adults-under-50-now-use-chatgpt/
+internet_high,0.94,fraction,2025,proxy,ITU internet use not AI usage,https://www.itu.int/dms_pub/itu-d/opb/ind/D-IND-ICT_MDD.GCR-2025-4-PDF-E.pdf
+internet_uppermiddle,0.89,fraction,2025,proxy,ITU internet use not AI usage,https://www.itu.int/dms_pub/itu-d/opb/ind/D-IND-ICT_MDD.GCR-2025-4-PDF-E.pdf
+internet_lowermiddle,0.63,fraction,2025,proxy,ITU internet use not AI usage,https://www.itu.int/dms_pub/itu-d/opb/ind/D-IND-ICT_MDD.GCR-2025-4-PDF-E.pdf
+internet_low,0.23,fraction,2025,proxy,ITU internet use not AI usage,https://www.itu.int/dms_pub/itu-d/opb/ind/D-IND-ICT_MDD.GCR-2025-4-PDF-E.pdf
+token_price_peak,1.15,USD per million tokens,2026-03,sample,Ramp blended price,https://ramp.com/data/ai-index-sept-2026
+token_price_sept,0.68,USD per million tokens,2026-09,sample,Ramp blended price,https://ramp.com/data/ai-index-sept-2026
