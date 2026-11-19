@@ -8,7 +8,7 @@ Research snapshot: 2026-11-19. All amounts are USD billions unless noted.
 
 ## 1. Conclusion
 
-**Engine revision 2026-11-19:** tail drift, truncation, tail margins, limited liability, hidden base share loss and backtest parameter mismatch fixed; see [Engine revision](#engine-revision-2026-11-19-what-changed-and-why). 101 local tests pass; gate still BLOCKED.
+**Engine revision 2026-11-19:** tail drift, truncation, tail margins, limited liability, hidden base share loss and backtest parameter mismatch fixed; see [Engine revision](#engine-revision-2026-11-19-what-changed-and-why). 107 local tests pass; gate still BLOCKED.
 
 **Stage-four handoff:** 17 candidate issuer families, 20 vintage SEC customer observations across nine companies, zero validated complete profiles. The accounting bridge is opt-in and untrained. Independent five-year equity WAPE remains unavailable; no release gate has passed. See [preregistration and next steps](evaluation/stage4_preregistration.md). Local suite: 94 tests passed.
 
@@ -39,7 +39,7 @@ Negative residuals denote funding distress, not negative share prices. P5/P95 no
 
 Chronological issuer-family train/validation/test separation, five-year label-availability embargo, preregistered thresholds, frozen code/parameters/predictions and independent review are required. Revealed cohorts are development diagnostics only. Primary target is five-year equity market capitalization; revenue and cash flow are auxiliary. Project-specific gate: at least ten distinct issuer families across two technology cycles, WAPE <=30%, absolute signed bias <=15%, strictly beat flat capitalization and constant P/S. Machine checks are necessary but not proof of independent custody or source authenticity.
 
-Run `python -m evaluation.validation_gate --audit`; release candidate requires `python -m evaluation.validation_gate --manifest evaluation/release_manifest.json`. 101 local unit tests passed. Current historical diagnostic equity WAPE is 86.07%; complete company profiles, equity-loss training and blind final test are missing.
+Run `python -m evaluation.validation_gate --audit`; release candidate requires `python -m evaluation.validation_gate --manifest evaluation/release_manifest.json`. 107 local unit tests passed. Current historical diagnostic equity WAPE is 86.07%; complete company profiles, equity-loss training and blind final test are missing.
 
 ### Engine revision (2026-11-19): what changed and why
 
@@ -68,6 +68,20 @@ Two items were reviewed and deliberately *not* changed. First, compute commitmen
 | Terminal capture / demand growth / acquisition rate / initial volume alone | — | not reachable (max ~323–338) |
 
 At factor 0.68: compute cost ratio 39%, other opex 22%, WACC 10.6%, capture 47%, sector-growth multiplier 1.34x. Reported nine-month accrual ratios are 56.6% compute and 47.2% other. A single growth lever cannot reach $1.2T because faster growth re-binds the held-share ceiling. The market value therefore implies jointly better share, growth *and* margins, not one heroic assumption.
+
+### Stage-4 margin-path component (frozen, not yet scored)
+
+Five-year FCF margin, (CFO − capex − capitalized software) / revenue, is tested as a standalone component before any market-cap scoring. See the [preregistration](evaluation/stage4_margin_preregistration.md). Inputs are original-vintage XBRL facts from the last annual filing filed on or before the origin, for all 17 stage-4 issuers ([inputs](data/stage4_origin_inputs.csv)). Development uses seven observations from exposed families only ([panel](data/margin_dev_panel.csv)).
+
+| Candidate (family leave-one-out, development) | MAE (pp) | Bias (pp) |
+|---|---:|---:|
+| hold origin margin | 9.64 | −8.23 |
+| fade to 15% (pre-revision engine) | 11.12 | −10.87 |
+| pooled mean (27.8%) | 9.28 | −0.26 |
+| converge to m* (3-year half-life) | 8.56 | +1.34 |
+| **leverage: m0 + 0.376·max(0, ln growth)** | **4.94** | +2.53 |
+
+Under the preregistered rule, `leverage` is selected. Faster-growing issuers expanded margins more, and holding the origin margin underpredicted by about 8 points. Predictions for all candidates are frozen with SHA-256 hashes in [`stage4_margin_freeze.json`](evaluation/stage4_margin_freeze.json). **No stage-4 label has been opened.** Seven development points are very few, and the modeler is not blind to these companies' history; see the disclosed limitations. The component is not applied to Anthropic: its origin growth lies far outside the development range. Score with `python -m evaluation.margin_path --score LABELS.csv` only after labels are collected under independent custody.
 
 ## 2. Overarching valuation model
 
@@ -848,13 +862,14 @@ These are mean equity residuals ($B), not validated fair-value estimates. Expens
 
 ## 9. Reproduction and data
 
-101 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+107 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
 python -m evaluation.company_oos
 python -m evaluation.five_year
 python -m evaluation.reverse_dcf --equity 1200
+python -m evaluation.margin_path --verify
 python -m evaluation.growth_comparison
 python -m evaluation.fundamental_growth
 python -m evaluation.external_validation
