@@ -1,0 +1,15 @@
+company,metric,value,unit,period_end,available_date,source,scope
+Adobe,digital_media_arr,10.18,USD B annualized,2020-11-27,2020-12-10,https://www.sec.gov/Archives/edgar/data/796343/000079634320000248/adbeex991q420.htm,Digital Media only not personal revenue
+Adobe,digital_media_arr_prior,8.33,USD B annualized,2019-11-29,2020-12-10,https://www.sec.gov/Archives/edgar/data/796343/000079634320000248/adbeex991q420.htm,Derived from 10.18 less 1.85 annual net increase
+Adobe,digital_experience_revenue,3.13,USD B FY,2020-11-27,2020-12-10,https://www.sec.gov/Archives/edgar/data/796343/000079634320000248/adbeex991q420.htm,Enterprise-oriented segment not entire enterprise ledger
+Adobe,rpo,11.34,USD B,2020-11-27,2020-12-10,https://www.sec.gov/Archives/edgar/data/796343/000079634320000248/adbeex991q420.htm,Customer performance obligations not cost commitments
+Salesforce,attrition_upper,.09,fraction trailing 12m,2020-01-31,2020-03-05,https://www.sec.gov/Archives/edgar/data/1108524/000110852420000014/crm-20200131.htm,Upper bound on annualized contract value reduction excluding multiple acquired businesses
+PayPal,active_accounts_prior,295,million accounts,2019-09-30,2020-11-02,https://www.sec.gov/Archives/edgar/data/1633917/000163391720000167/q3-20paypalearningsrelea.htm,Active accounts not unique people
+PayPal,active_accounts,361,million accounts,2020-09-30,2020-11-02,https://www.sec.gov/Archives/edgar/data/1633917/000163391720000167/q3-20paypalearningsrelea.htm,Active accounts not unique people
+PayPal,transactions_per_active,40.1,transactions,2020-09-30,2020-11-02,https://www.sec.gov/Archives/edgar/data/1633917/000163391720000167/q3-20paypalearningsrelea.htm,Engagement not pricing
+ServiceNow,large_acv_accounts_prior,808,accounts above USD 1m,2019-09-30,2020-10-29,https://www.sec.gov/Archives/edgar/data/1373715/000137371520000257/now-20200930.htm,Threshold cohort not employee size
+ServiceNow,large_acv_accounts,1012,accounts above USD 1m,2020-09-30,2020-10-29,https://www.sec.gov/Archives/edgar/data/1373715/000137371520000257/now-20200930.htm,Threshold cohort not employee size
+ServiceNow,renewal_acv_9m,.97,fraction,2020-09-30,2020-10-29,https://www.sec.gov/Archives/edgar/data/1373715/000137371520000257/now-20200930.htm,ACV of renewal eligible contracts excluding continuing account expansion
+Shopify,mrr_prior,.0507,USD B monthly run rate,2019-09-30,2020-10-29,https://www.sec.gov/Archives/edgar/data/1594805/000159480520000047/exhibit991pressrelease.htm,Not recognized revenue
+Shopify,plus_mrr,.0187,USD B monthly run rate,2020-09-30,2020-10-29,https://www.sec.gov/Archives/edgar/data/1594805/000159480520000047/exhibit991pressrelease.htm,Shopify Plus plan not employee size
+Shopify,plus_mrr_fraction,.25,fraction,2020-09-30,2020-10-29,https://www.sec.gov/Archives/edgar/data/1594805/000159480520000047/exhibit991pressrelease.htm,Rounded share of MRR only not transaction revenue
