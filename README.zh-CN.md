@@ -2,431 +2,341 @@
 
 [English](README.md) · **简体中文**
 
-快照日期 2026-11-19。除特别说明外，单位为十亿美元。**研究模型：[发布门禁](MODEL_VALIDATION_PROTOCOL.md)为 BLOCKED，本文任何数字都不是经过验证的估值。**
+快照 2026-11-19 · 单位：十亿美元 · **发布门槛：BLOCKED**（[§3.1](#31-发布门槛)）：研究估计，非验证估值。
 
 ## 结果
 
-**条件股权剩余价值**：宏观路径与分块参数联合抽样 1,024 次（§1.5）。悲观 / 基准 / 乐观 = P10 / P50 / P90。
-
-| 均值 | P5 | **P10（悲观）** | **P50（基准）** | **P90（乐观）** | P95 | 股权<0 的概率 |
+| 均值 | P5 | **P10（悲观）** | **P50（基准）** | **P90（乐观）** | P95 | $P(V<0)$ |
 |---:|---:|---:|---:|---:|---:|---:|
 | 501.67 | 20.55 | **72.13** | **401.43** | **1,043.01** | 1,345.69 | 3.3% |
 
-**结构极端组合**（压力测试，不是分位数：所有参数块同时取悲观或乐观端点），正常宏观周期：
+联合抽样 1,024 次（§1.5）。压力端点（所有参数块同时取一端，非分位数）：
 
-| 情景 | 第1年收入 | 第5年 | 第10年 | EV | 股权 |
+| | $R_1$ | $R_5$ | $R_{10}$ | EV | $V$ |
 |---|---:|---:|---:|---:|---:|
 | 悲观 | 50.67 | 24.88 | 21.68 | −356.80 | −254.99 |
 | 基准 | 100.12 | 221.47 | 328.27 | 392.82 | 494.63 |
-| 乐观 | 115.69 | 396.70 | 734.42 | 2760.30 | 2862.11 |
+| 乐观 | 115.69 | 396.70 | 734.42 | 2,760.30 | 2,862.11 |
 
-**反向 DCF**（`python -m evaluation.reverse_dcf --equity 1200`）：要让股权价值达到约 1.2 万亿美元（IPO 条款对应的市值），单个杠杆需要变成多少。仅作诊断。
+反向 DCF，$V=1{,}200$（IPO 定价），每次只动一个参数：
 
-| 杠杆（其余保持基准） | 基准 | 所需 |
+| 参数 | 基准 | 所需 |
 |---|---:|---:|
-| 全部参数朝乐观移动（因子 z） | 0 | 0.47 |
-| WACC | 8.86% | 5.67% |
-| 存活公司长期增长 g | 3% | 6.83% |
-| 只动份额、需求增长、获客率或用量之一 | — | 达不到（最高约 495–519） |
+| $W$ | 8.86% | 5.67% |
+| $g$ | 3% | 6.83% |
+| $c^\ast$ | 45.5% | 10.8% |
+| 全部朝乐观，$z$ | 0 | 0.47 |
+| 份额、需求、获客、用量 | — | 达不到（最高 495–519） |
 
-z = 0.47 时，长期税后利润率为 22.8%，在 18 家云软件公司扣 SBC 后的利润率结果中处于第 83 百分位（§3.2）；基准的 18.4% 处于第 72 百分位。只把算力成本率从 45.5% 降到 10.8% 也能单独达到 1.2 万亿。
-
-## 1. 估值模型
+## 1. 模型
 
 ```math
-V^{(\ell)}=\sum_{t=1}^{10}\frac{FCF^{(\ell)}_t}{(1+W)^t}+\sum_{t=11}^{\infty}\frac{\mathbb E[FCF_t\mid R^{(\ell)}_{10}]}{(1+W)^t}+Cash-Debt,\qquad \widehat V=\frac1L\sum_{\ell=1}^{L}V^{(\ell)}
+V=\underbrace{\sum_{t=1}^{10}\frac{FCF_t}{(1+W)^t}}_{\S1.2}+\underbrace{\sum_{t>10}\frac{\mathbb E[FCF_t\mid R_{10}]}{(1+W)^t}}_{\S1.3}+\underbrace{Cash-Debt}_{\S1.4},\qquad \widehat V=\frac1{1024}\sum_{\ell}V^{(\ell)}\ (\S1.5)
 ```
-
-| 符号 | 含义 | 章节 |
-|---|---|---|
-| $V^{(\ell)}$ | 第 $\ell$ 次抽样（宏观路径和参数）的股权剩余价值 | §1.5 |
-| $FCF_t$ | 第1–10年自由现金流 | §1.2 |
-| $R_t$ | 收入 | §1.1 |
-| $\mathbb E[FCF_t\mid R_{10}]$ | 生命周期延续阶段的期望现金流 | §1.3 |
-| $W$ | 折现率（WACC） | §2 |
-| $Cash-Debt$ | 备考资产负债调整 | §1.4 |
-| $L$ | 抽样次数，1,024 | |
 
 ### 1.1 收入
 
 ```math
-R_t=s_t\,\mathcal R(L_t+T_t+S_t)+B^{\mathrm{pers}}_t,\qquad s_t=\min\Big(1,\frac{C_t}{\mathcal R(L_t+T_t+S_t)}\Big),\qquad \mathcal R(X)=\sum_{i,d,h,v}X_{idhv}\,r_v
+R_t=s_t\,\mathcal R(L_t+T_t+S_t)+B^{p}_t,\qquad \mathcal R(X)=\sum_{idhv}X_{idhv}r_v,\qquad s_t=\min\Big(1,\frac{C_t}{\mathcal R(L_t+T_t+S_t)}\Big)
 ```
 
-| 符号 | 含义 |
-|---|---|
-| $L_t,T_t,S_t$ | 正式 API、试点、企业席位三类账单张量（§1.1.2） |
-| $r_v$ | 供应商状态 $v$ 下 Claude 获得的收入比例：$r=(1,0.6,0,0,0,0,0)$ |
-| $C_t$ | 企业需求上限（§1.1.5） |
-| $s_t$ | 上限缩放系数，同时作用于三个张量 |
-| $B^{\mathrm{pers}}_t$ | 个人订阅收入（§1.1.6） |
+| 符号 | 含义 | 取值 |
+|---|---|---|
+| $L,T,S$ | 正式 API、试点、企业席位的账单张量 | §1.1.2 |
+| $r_v$ | 各供应商状态下 Claude 的收入份额 | $(1,.6,0,0,0,0,0)$ |
+| $C_t$ | 企业需求天花板 | §1.1.5 |
+| $B^p_t$ | 个人订阅 | §1.1.6 |
 
 #### 1.1.1 起点
 
 ```math
-\omega=\frac{C_{9m}}{R_{9m}}=\frac{26.300}{33.242}=79.12\%,\qquad A_0=R_0\,\omega=64.085,\qquad B_0=R_0(1-\omega)=16.915
+R_0=81,\qquad \omega=\tfrac{26.300}{33.242}=79.1\%,\qquad A_0=\omega R_0=64.1,\qquad B_0=(1-\omega)R_0=16.9,\qquad B^p_0=0.5B_0
 ```
 
-$R_0$ = 81，为10月年化收入。$A_0$ 为用量（API）收入，$B_0$ 为订阅收入，其中假设50%为个人订阅。把前9个月的结构套用到10月只是近似。来源：[S-1](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm)、[年化收入披露](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074628/anthropicpbc-fwpjapanprospa.htm)。
+来源：[S-1](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm)、[年化收入](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074628/anthropicpbc-fwpjapanprospa.htm)。10 月结构沿用前 9 个月（代理）。
 
 #### 1.1.2 客户状态张量
 
 ```math
-X_t=\mathcal K_{Z_t}\big(\mathcal G_t(X_{t-1})\,M_{Z_t}\big)+A_t,\qquad X\in\mathbb R^{8\times3\times3\times7}
+X_t=\mathcal K_{Z_t}\big(\mathcal G_t(X_{t-1})\,M_{Z_t}\big)+A_t,\qquad X\in\mathbb R^{8\times3\times3\times7}_{(i,d,h,v)}
 ```
 
-| 符号 | 含义 |
+$i$ 生命周期（种子 0–4+、成长、中小企业、大型）· $d$ 停留期 · $h$ 健康度 · $v$ 供应商 · $Z_t$ 宏观状态。
+
+**1.1.2.1 生命周期核 $\mathcal K$**
+
+```math
+g_k=\frac{F_k-F_{k-1}}{U_{k-1}},\quad U_k=U_{k-1}(1-g_k-b_k-h_k),\quad h^{\mathrm{eff}}_i=\min(0.95,\,h_i\,m^Z_{\mathrm{death}}m^H_{\mathrm{death}})
+```
+
+| | 取值 |
 |---|---|
-| $X_{idhv}$ | 按生命周期 $i$（种子第0–4+年、成长、中小、大型）、停留期 $d$（0/1/2+）、财务健康 $h$、供应商 $v$ 划分的账单量 |
-| $Z_t$ | 宏观周期：寒冬、正常、繁荣（§1.1.2.3） |
-| $M_{Z}$ | 供应商转移矩阵（§1.1.2.4） |
-| $\mathcal K_Z$ | 生命周期与健康转移核（次随机，剩余部分为关闭）（§1.1.2.1） |
-| $\mathcal G_t$ | 增长算子（§1.1.3） |
-| $A_t$ | 新增账单（§1.1.4） |
+| $F_{1..4}$（种子→A 轮） | 10 / 22 / 31 / 36% |
+| $h_i$（早期/成长/中小/大型） | 15.03 / 8.06 / 7.27 / 0.132%（BLS） |
+| $m^Z_{\mathrm{death}}$、$m^Z_{\mathrm{grow}}$（寒冬/正常/繁荣） | 1.5/1/0.75 · 0.65/1/1.25 |
+| $m^H_{\mathrm{death}}$、支出（困境/有融资/自给） | 1.6/1/0.55 · 0.75/1/1.10 |
 
-##### 1.1.2.1 生命周期转移核
+**1.1.2.2 健康度** $\;\pi_{h\mid y}\propto\pi_hP(y\mid h)$, $P(y{=}1\mid h)=(.15,.75,.25)$.
+
+**1.1.2.3 宏观** $\;P_Z=\begin{pmatrix}.60&.35&.05\\.18&.67&.15\\.08&.42&.50\end{pmatrix}$ （寒冬、正常、繁荣）。
+
+**1.1.2.4 供应商**
 
 ```math
-g_k=\frac{F_k-F_{k-1}}{U_{k-1}},\qquad U_k=U_{k-1}(1-g_k-b_k-h_k),\qquad h^{\mathrm{eff}}_{i}=\min\big(0.95,\;h_i\,m^{Z}_{\mathrm{death}}\,m^{H}_{\mathrm{death}}\big)
+c=\Big(1-\frac{s_g}{1-h_g}\Big)m^Z_c,\qquad M_{i\to w}=\begin{cases}c\,\delta_w&\text{流失至 }w\\(1-c)\sigma&\text{单}\leftrightarrow\text{多供应商}\\(1-c)(1-\sigma)&\text{保持}\end{cases}
 ```
 
-| 符号 | 取值 / 含义 |
-|---|---|
-| $F_k$ | 种子轮后 $k$ 年内拿到 A 轮的累计比例：10/22/31/36%（基准） |
-| $g_k,b_k,h_k$ | 种子期各年的晋级、自力更生、关闭风险 |
-| $h_i$ | 各组年关闭率：早期 15.03%、成长 8.06%、中小 7.27%、大型 0.132%（BLS 机构数据；大型为困境代理） |
-| $m^{Z}_{\mathrm{death}}$ | 寒冬/正常/繁荣：1.5 / 1 / 0.75 |
-| $m^{H}_{\mathrm{death}}$ | 困境/有融资/自给：1.6 / 1 / 0.55 |
-| 晋级 | 乘以 $m^Z_{\mathrm{grow}}$ = 0.65 / 1 / 1.25；停留期乘数 0.55 / 1 / 1.20；升级支出 ×1.35，降级 ×0.75 |
+$s_g$ = 69.0/78.7/82.6/92.3% · $\delta$ = .35/.25/.15/.10/.15 （OpenAI、Google、自建、其他、不用）· $\sigma$ = .12 / .04 · $m^Z_c$ = 1.3 / 0.85 · 回流每年 .06 / .035。
 
-##### 1.1.2.2 财务健康隐状态
+#### 1.1.3 增长
 
 ```math
-\pi_{0,h\mid y}=\frac{\pi_{0,h}P(y\mid h)}{\sum_k\pi_{0,k}P(y\mid k)},\qquad P(y=1\mid h)=(0.15,\,0.75,\,0.25)
-```
-
-$y$ 表示近期是否观测到融资。正常周期下的转移行为 (.67, .23, .10)、(.18, .62, .20)、(.04, .10, .86)；寒冬时向困境倾斜，繁荣时反之。健康状态同时把支出乘以 0.75 / 1 / 1.10。
-
-##### 1.1.2.3 宏观周期
-
-```math
-P_Z=\begin{pmatrix}0.60&0.35&0.05\\0.18&0.67&0.15\\0.08&0.42&0.50\end{pmatrix}\quad(\text{winter, normal, boom})
-```
-
-##### 1.1.2.4 供应商转移
-
-```math
-M_{i\to w}=\begin{cases}c\,\delta_w & w\in\{\mathrm{OpenAI,Google,self,other,none}\}\\(1-c)\,\sigma & \text{single}\leftrightarrow\text{multi}\\(1-c)(1-\sigma)&\text{stay}\end{cases},\qquad c=\Big(1-\frac{s_g}{1-h_g}\Big)m^Z_c
-```
-
-| 符号 | 取值 / 含义 |
-|---|---|
-| $s_g$ | 各组年收入留存率：69.0 / 78.7 / 82.6 / 92.3% |
-| $\delta$ | 流失去向比例：.35 / .25 / .15 / .10 / .15 |
-| $\sigma$ | 单一↔多供应商切换概率：0.12（单→多）、0.04（多→单） |
-| $m^Z_c$ | 寒冬 1.3，繁荣 0.85 |
-| 回流 | 每年从竞争对手回流 0.06、从未购买状态回流 0.035，再乘以 $m^Z_{\mathrm{grow}}$ |
-
-#### 1.1.3 增长算子
-
-```math
-d_t=\max\Big(0,1-\frac{t-1}{7}\Big),\qquad \mu_t=[1-(1-p)d_t]\,[1+(q-1)d_t],\qquad \alpha_t=0.1+0.5\,d_t
+d_t=\max\Big(0,1-\tfrac{t-1}{7}\Big),\quad \mu_t=[1-(1-p)d_t][1+(q-1)d_t],\quad \alpha_t=.1+.5d_t
 ```
 
 ```math
-L_t=\mathcal K\big([(L_{t-1}+\phi\,\rho\,T_{t-1})\,F_t\,\mu_t\,H]\,M\big)+(1-\alpha_t)A_t,\qquad T_t=\alpha_tA_t,\qquad S_t=\mathcal K\big([S_{t-1}F_t(1+b\,d_t)H]\,M\big)+A^{\mathrm{seat}}_t
+L_t=\mathcal K\big([(L_{t-1}+\phi\rho T_{t-1})F_t\mu_tH]M\big)+(1-\alpha_t)A_t,\quad T_t=\alpha_tA_t,\quad S_t=\mathcal K\big([S_{t-1}F_t(1+bd_t)H]M\big)+A^{s}_t
 ```
 
-| 符号 | 含义（基准） |
-|---|---|
-| $d_t$ | 增长衰减（§3.3 检验了这一形状） |
-| $p,q$ | 初始价格、用量乘数：0.78、1.65 |
-| $\phi,\rho$ | 试点成功率、推广倍数：0.35、3 |
-| $F_t$ | 早期和成长期企业的融资乘数：$1+(f-1)d_t$ |
-| $H$ | 健康状态支出乘数 |
-| $b$ | 订阅增长：12% |
+基准：$p$=.78, $q$=1.65, $\phi$=.35, $\rho$=3, $b$=12%, $F_t=1+(f-1)d_t$.
 
 #### 1.1.4 新客户
 
 ```math
-J_t=x_{Z_t}\big[n\,d_t\,\mathcal R(X_{t-1})+\eta(1-d_t)\,\mathcal L(X_{t-1})\big],\qquad \mathcal L(X)=\sum X_{idhv}r_v(1-s_i),\qquad J^{\mathrm{birth}}_t=\min(0.2J_t,\;\mathrm{Budget}_t)
+J_t=x_Z\big[n\,d_t\,\mathcal R(X_{t-1})+\eta(1-d_t)\textstyle\sum X r_v(1-s_i)\big],\qquad J^{\mathrm{birth}}_t=\min(0.2J_t,\,0.418)
 ```
 
-$n$ = 0.20 为获客率，$\eta$ = 1 为成熟期补充系数，$x_Z$ 为宏观销售乘数。Budget = 美国种子轮 5,049 笔 × 全球系数 2 × 去重 0.75 × 捕获 0.25 × 平均融资额的 5%，每年 0.418。
+$n$=.20, $\eta$=1; $0.418=5049\times2\times.75\times.25\times5\%\times\overline{\text{seed round}}$.
 
-#### 1.1.5 企业需求上限
+#### 1.1.5 企业需求天花板
 
 ```math
-C_t=c_t\sum_i D_{i,t},\qquad D_{i,t}=D_{i,t-1}\big[1+0.03+(m\,g_i-0.03)\max\Big(0,1-\frac{\max(0,t-2)}{8}\Big)\big],\qquad c_t=c_0+(c_{10}-c_0)\min(t/10,1)
+C_t=c_t\sum_iD_{i,t},\quad D_{i,t}=D_{i,t-1}\big[1.03+(mg_i-.03)\max(0,1-\tfrac{(t-2)^+}{8})\big],\quad c_t=c_0+(c_{10}-c_0)\min(\tfrac t{10},1)
 ```
 
-| 符号 | 含义 |
-|---|---|
-| $D_{i,0}$ | Menlo 2026 年部署支出 176.8 × IDC 行业权重 $w_i$ |
-| $g_i$ | IDC 2024–28 年行业复合增长率；$m$ = 0.7 / 1 / 1.5 |
-| $c_0$ | $(81-B_0/2)/176.8$ = 41%，观测到的起始份额 |
-| $c_{10}$ | 悲观 15%，基准保持 $c_0$，乐观 50% |
-
-来源：[IDC](https://info.idc.com/rs/081-ATC-910/images/DA-Market-Primer-AI-and-GenAI.pdf)、[Menlo 2026](https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/)。
+$D_{i,0}=176.8\,w_i$ （[Menlo](https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/) × IDC 权重） · $g_i$ IDC 2024–28 CAGR · $m$=.7/1/1.5 · $c_0=(81-B_0/2)/176.8=41\%$ · $c_{10}$=15%/41%/50%.
 
 #### 1.1.6 个人订阅
 
 ```math
-B^{\mathrm{pers}}_t=\min\Big(B^{\mathrm{raw}}_t\frac{1-\kappa e_t}{1-\kappa e_0},\;R_C+\max(0,B^{\mathrm{pers}}_0-R_C)\max(0,1-t/5)\Big),\qquad R_C=12\,N_N\,k\,F_C
+B^p_t=\min\Big(B^{\mathrm{raw}}_t\tfrac{1-\kappa e_t}{1-\kappa e_0},\;R_C+(B^p_0-R_C)^+(1-\tfrac t5)^+\Big),\qquad R_C=12N_NkF_C
 ```
 
-| 符号 | 含义 |
+$\kappa$=.8/.5/.2 · $e_t$: .4→.8/.7/.6 · $N_N$=0.325B ([Netflix](https://www.sec.gov/Archives/edgar/data/1065280/000106528025000044/nflx-20241231.htm)) · $k$=5/15/30% · $F_C$=\$13.53/mo.
+
+### 1.2 自由现金流，$t\le10$
+
+```math
+Y_t=R_t-\max(K_t,\,c_tR_t)-(o_t+x_t)R_t,\qquad FCF_t=Y_t-0.25\,Y_t^+,\qquad \theta_t=\theta^\ast+(\theta_0-\theta^\ast)2^{-t/H}
+```
+
+| 符号 | 取值 |
 |---|---|
-| $\kappa$ | 企业版对个人订阅的替代：.8 / .5 / .2 |
-| $e_t$ | 企业覆盖率，从 0.4 线性变到 0.8 / 0.7 / 0.6 |
-| $N_N$ | Netflix 付费账户数，0.325B |
-| $k$ | Claude 与 Netflix 账户数之比：5 / 15 / 30% |
-| $F_C$ | 按地区加权的价格，每月 13.53 美元 |
+| $\theta=(c,o,x)$ | 算力、其他运营费用、资本开支占收入比 |
+| $\theta_0$ | (56.6%, 47.2%, 2.8%)，2026 年前 9 个月披露值 |
+| $\theta^\ast$ | 基准 (45.5%, 24.0%, 6%)，来自可比公司（§3.6） |
+| $H$ | 3 y (§3.2) |
+| $K_t$ | 算力承诺下限： $K_1$=70.7, $K_{2..4}$=126.97, $K_{5..19}$=29.95, $K_{20+}$=0 |
 
-来源：[Netflix 10-K](https://www.sec.gov/Archives/edgar/data/1065280/000106528025000044/nflx-20241231.htm)。
-
-### 1.2 自由现金流（第1–10年）
+### 1.3 延续价值，$t>10$
 
 ```math
-Y_t=R_t-\max\big(K^{\mathrm{floor}}_t,\;c_tR_t\big)-(o_t+x_t)R_t,\qquad FCF_t=Y_t-0.25\max(Y_t,0)
-```
-
-#### 1.2.1 成本路径
-
-```math
-\theta_t=\theta^\ast+(\theta_0-\theta^\ast)\,2^{-t/H},\qquad \theta=(c,o,x),\qquad H=3
-```
-
-$\theta_0$ = (56.6%, 47.2%, 2.8%) 为前9个月已披露的算力、其他费用和资本开支比率；$\theta^\ast$ 为情景的长期值（基准 45.5%, 24.0%, 6%，由可比公司估计，§3.8）。$H$ = 3 年是 18 家云软件公司利润率路径的开发阶段估计（§3.2）。`cost_half_life=None` 表示第1年直接采用 $\theta^\ast$。
-
-#### 1.2.2 算力承诺
-
-```math
-K^{\mathrm{floor}}_1=70.7,\qquad K^{\mathrm{floor}}_{2..4}=\frac{451.6-70.7}{3},\qquad K^{\mathrm{floor}}_{5..19}=\frac{900.9-451.6}{15},\qquad K^{\mathrm{floor}}_{20+}=0
-```
-
-承诺是现金支出下限，不产生收入。trace 中输出 `commitment_implied_revenue` = $K/c$ 和 `idle_commitment_cost`；基准第1–4年闲置成本为 15.8 / 60.7 / 46.9 / 31.1。
-
-### 1.3 延续价值（第10年之后）
-
-```math
-a_{10}=(R_{10},0,0,0),\qquad a_t=a_{t-1}A,\qquad A=P\,\mathrm{diag}\big(k(1+g),\,0.85k,\,1.08k(1+g),\,0\big)
+a_{10}=(R_{10},0,0,0),\quad a_t=a_{t-1}P\,\mathrm{diag}\big(k(1+g),.85k,1.08k(1+g),0\big),\quad \mathbb E[FCF_t]=a_t\mu-S_t\Big(K_t-\tfrac{c\,\mathbf 1^\top a_t}{S_t}\Big)^+
 ```
 
 ```math
-\mathbb E[FCF_t]=a_t\,\mu-S_t\max\Big(0,\;K^{\mathrm{floor}}_t-\frac{c\,\mathbf 1^\top a_t}{S_t}\Big),\qquad \sum_{t>30}\frac{\mathbb E[FCF_t]}{(1+W)^t}=\frac{a_{30}B(I-B)^{-1}\mu}{(1+W)^{30}},\quad B=\frac{A}{1+W}
+P=\begin{pmatrix}1-e-\delta-u&\delta&u&e\\.10&.90-e-u&u&e\\.40&\delta&.60-e-\delta&e\\0&0&0&1\end{pmatrix},\quad \mu=\big(m,.2m,\min(.6,\tfrac43m),0\big),\quad m=.75(1-c^\ast-o^\ast-x^\ast)
 ```
 
-| 符号 | 含义 |
-|---|---|
-| $a_t$ | 各状态（成熟、衰退、转型、退出）的期望收入 |
-| $k$ | 增长缩放系数，使存活公司的长期增长等于 $g$：$\rho\big(P_{1:3,1:3}\,\mathrm{diag}(1+g,\,0.85,\,1.08(1+g))\big)\,k=(1+g)(1-e)$ |
-| $g$ | 长期增长：2.5 / 3 / 3.5% |
-| $S_t$ | 存活概率；退出后股东不再承担承诺 |
-| $\mu$ | 各状态利润率（§1.3.2） |
+状态：成熟、衰退、再增长、退出。$k$ 使存活者长期增速等于 $g$。30 年以后： $a_{30}B(I-B)^{-1}\mu/(1+W)^{30}$, $B=A/(1+W)$.
 
-#### 1.3.1 生命周期链与退出风险
+| | 悲观 | 基准 | 乐观 |
+|---|---:|---:|---:|
+| $e=[1-.92^{1/5}]\varsigma$ （仅困境退出） | .00827 | .00132 | .0009 |
+| $\delta$ / $u$ | .30 / .03 | .20 / .08 | .10 / .15 |
+| $m$ | 8.9% | 18.4% | 27.9% |
+
+$\varsigma$：8%（[Daepp et al.](https://doi.org/10.1098/rsif.2015.0120)），悲观 50%（互联网泡沫）。5 年 8% 退市率： [BCG](https://www.bcg.com/publications/2026/why-do-companies-fail-us-failure-rates).
+
+### 1.4 股权衔接
 
 ```math
-P=\begin{pmatrix}1-e-\delta-u&\delta&u&e\\0.10&0.90-e-u&u&e\\0.40&\delta&0.60-e-\delta&e\\0&0&0&1\end{pmatrix},\qquad e=\big[1-(1-0.08)^{1/5}\big]\,\varsigma
+Cash-Debt=212.684-110.873\quad(\text{调整后 }232.351-109.742\text{，多 }20.80)
 ```
 
-$e$ 只计零回收的**困境**退出；被收购时股东会拿到对价（§3.4）。$\varsigma$ 为大公司退市中困境退出的占比：基准 8%（[Daepp 等](https://doi.org/10.1098/rsif.2015.0120)），悲观 50%（互联网泡沫时期破产占全部退出的比例，2/4）。乐观情景的 $e$ 为 0.09%/年，即美国大公司历史上的直接失败率。衰退概率 $\delta$ = .30 / .20 / .10，转型概率 $u$ = .03 / .08 / .15。5年8%退市率的来源：[BCG](https://www.bcg.com/publications/2026/why-do-companies-fail-us-failure-rates)。
-
-#### 1.3.2 各状态利润率
-
-```math
-\mu=\Big(m,\;0.2m,\;\min\Big(0.6,\frac{4m}{3}\Big),\;0\Big),\qquad m=(1-c^\ast-o^\ast-x^\ast)(1-0.25)
-```
-
-基准 $m$ = 18.4%；悲观 8.9%，乐观 27.9%（§3.8）。悲观情景股权仍为负，因为收入萎缩到低于已承诺的算力下限。
-
-### 1.4 股权调整
-
-```math
-Cash-Debt=212.684-110.873
-```
-
-备考现金和可转债账面价值仅为示意。更新后的调整数（232.351 − 109.742）会增加 20.80。稀释和最终资本结构尚未确定。
+稀释尚未确定。
 
 ### 1.5 不确定性
 
 ```math
-Z_{t}\sim P_Z,\qquad (n_r,n_m)\sim\mathcal N\!\left(0,\begin{pmatrix}1&\rho\\\rho&1\end{pmatrix}\right),\qquad n_w\sim\mathcal N(0,1),\qquad z_\ell\sim\mathrm{Tri}(-1,0,1)
+(n_r,n_m)\sim\mathcal N\Big(0,\begin{pmatrix}1&\rho\\\rho&1\end{pmatrix}\Big),\quad n_w\sim\mathcal N(0,1),\quad z_\ell\sim\mathrm{Tri}(-1,0,1),\quad Z_t\sim P_Z
 ```
 
 ```math
-z_r=\frac{n_r}{1.2816}\,\bar z_{\mathrm{side}},\qquad m^\ast=\hat F^{-1}_{m}\big(\Phi(n_m)\big),\qquad W=\hat F^{-1}_{W}\big(\Phi(n_w)\big)
+z_r=\frac{n_r}{1.2816}\bar z_{\pm},\qquad m^\ast=\hat F_m^{-1}(\Phi(n_m)),\qquad W=\hat F_W^{-1}(\Phi(n_w))
 ```
 
-| 符号 | 含义 |
+| 符号 | 取值 |
 |---|---|
-| $z_r$ | 收入块因子（客户状态参数、混合输入）；$\bar z$ = −0.312 / +0.630，使第5年/第1年收入倍数等于基准 × q10/q50 与基准 × q90/q50（≥500 亿美元可比公司 4 年收入倍数：1.28 / 1.80 / 2.38） |
-| $\hat F^{-1}_{m}$、$\hat F^{-1}_{W}$ | 可比公司长期利润率与同业 β 推出的 WACC 的经验分位数函数（§3.8）；算力占比取 $1-\Phi(n_m)$ 分位 |
-| $\rho$ | 0.334，面板中 4 年收入增长与利润率变化的 Spearman 相关 0.32 对应的高斯 copula 参数 |
-| $z_\ell$ | 生命周期块（长期增长、退出、衰退、续约），仍为手设 |
+| $\bar z_{\pm}$ | −0.312 / +0.630：使 $R_5/R_1$ = 基准 × (1.28, 2.38)/1.80，即 ≥500 亿美元可比公司 4 年收入倍数 q10、q90 与 q50 之比 |
+| $\hat F^{-1}_m,\hat F^{-1}_W$ | 可比公司经验分位数（§3.6） |
+| $\rho$ | .334（收入增长与利润率变化的 Spearman 相关 .32） |
+| $z_\ell$ | 生命周期块：$g$、$e$、$\delta$、$u$（手设） |
 
-只抽宏观路径时均值 402.88，P5–P95 为 242.27–519.67。原来的单一共同因子（`simulate(comonotone=True)`）给出 P90 1,177.01、P95 1,475.20。
+仅宏观：均值 402.88，P5–P95 242.27–519.67。单一共同因子：P90 1,177.01。
 
-## 2. 情景参数（假设）
+## 2. 参数
 
-| 参数 | 悲观 | 基准 | 乐观 |
-|---|---:|---:|---:|
-| 早期 / 成长 / 中小 / 大型权重 | 30/30/25/15% | 15/25/30/30% | 5/15/30/50% |
-| 试点比例 | 25% | 30% | 20% |
-| 试点成功率 / 推广倍数 | .20 / 2 | .35 / 3 | .50 / 4 |
-| 初始用量 / 价格 | 1.45 / .65 | 1.65 / .78 | 1.85 / .88 |
-| 获客率 / 补充系数 | .10 / .50 | .20 / 1 | .30 / 1.25 |
-| 订阅增长 | 3% | 12% | 22% |
-| 长期算力 / 其他 / 资本开支 | .589 / .233 / .06 | .455 / .240 / .06 | .345 / .233 / .05 |
-| 第10年份额 $c_{10}$ | 15% | 41%（保持） | 50% |
-| 困境退出 $e$ / 衰退 / 转型 | .00827 / .30 / .03 | .00132 / .20 / .08 | .0009 / .10 / .15 |
-| 长期增长 $g$ | 2.5% | 3% | 3.5% |
-| WACC | 9.38% | 8.86% | 7.68% |
+| | 悲观 | 基准 | 乐观 | 来源 |
+|---|---:|---:|---:|---|
+| 早期 / 成长 / 中小 / 大型 | 30/30/25/15% | 15/25/30/30% | 5/15/30/50% | 手设 |
+| 试点占比；成功率 / 推广年数 | 25%; .20/2 | 30%; .35/3 | 20%; .50/4 | 手设 |
+| 用量 $q$ / 价格 $p$ | 1.45/.65 | 1.65/.78 | 1.85/.88 | 手设 |
+| 获客 $n$ / 替补 $\eta$ | .10/.50 | .20/1 | .30/1.25 | 手设 |
+| 订阅增长 $b$ | 3% | 12% | 22% | 手设 |
+| $c^\ast$ / $o^\ast$ / $x^\ast$ | .589/.233/.06 | .455/.240/.06 | .345/.233/.05 | §3.6（$x^\ast$ 手设） |
+| $c_{10}$ | 15% | 41% | 50% | 手设 |
+| $g$ | 2.5% | 3% | 3.5% | 手设 |
+| $W$ | 9.38% | 8.86% | 7.68% | §3.6 |
 
-## 3. 证据与验证
+## 3. 证据
 
-### 3.0 数据来源核对
+除标明“只评分一次”外，以下均为开发或诊断证据。
 
-§3.2–3.4 使用的每个 SEC 数字都有两个来源：原始时点的 XBRL 数据，以及申报原文中印出的数字。共 41 份申报、205 个数，全部完全一致（[核对记录](data/sec_reconciliation.csv)；其中 34 个按百万美元披露，只能核对到这一精度）。每笔收购都有两个独立来源（[事件数据](data/stage4_exit_events.csv)），只有 NetSuite 的股权价值仍依赖单一来源。任何数字未经核对，测试都会失败。仓库原有数据也按同样方法逐条核对（[核对记录](data/legacy_reconciliation.csv)）：295 个 SEC 数字全部与申报原文一致；PayPal 现金有误（13.002→13.083），云计算样本的现金口径统一为现金加短期投资，8 个失效链接已替换。非 SEC 来源：市值及大部分锚点数据一致；IDC 分行业数据、JPM/ITU 以及 Cisco/CMGI/VeriSign 1998-99 年数据仍待核。
+### 3.0 数据
 
-### 3.1 发布门禁
-
-`python -m evaluation.validation_gate --audit` → **BLOCKED**。发布条件：至少 10 家未暴露的公司、覆盖 2 个技术周期，五年股权 WAPE ≤ 30%，偏差绝对值 ≤ 15%，同时打败"市值不变"和"市销率不变"两个基准，并具备完整公司画像、冻结的预测和独立审核人。[收购终点规则](evaluation/acquisition_endpoint_policy.md)已于 2026-11-19 **获批**并由门禁执行：被收购的公司以成交时股东获得的股权价值为标签，与匹配年限 $k=\max(1,\mathrm{round}(\tau))$ 下的模型股权价值比较，从不按零计。
-
-### 3.2 利润率路径：第四阶段测试（已评分一次）
-
-```math
-m=\frac{CFO-\mathrm{capex}-\mathrm{cap.\ software}}{\mathrm{revenue}}
-```
-
-预测在打开标签前已预注册并冻结（[预注册](evaluation/stage4_margin_preregistration.md)、[评分](evaluation/stage4_margin_score.json)）。17 家中评分 11 家，另外 6 家被收购，没有标签。
-
-| 模型（MAE，百分点） | 开发集留一 | 第四阶段全部 | 2015 | 2020 |
-|---|---:|---:|---:|---:|
-| 保持起点利润率 | 9.64 | 23.44 | 18.60 | 25.26 |
-| 收敛到 15% | 11.12 | 15.07 | 13.39 | 15.69 |
-| 合并均值 | 9.28 | 8.63 | 11.45 | 7.57 |
-| 向目标收敛（3年半衰期） | 8.56 | 6.77 | 10.10 | 5.52 |
-| **经营杠杆（预注册选中）** | **4.94** | **8.87** | 5.99 | 9.94 |
-
-选中的模型没有打败合并均值，因此未晋级；这份名单现已转入开发集。用全部 18 个观测（`margin_development`）看，5–6 年后扣 SBC 的利润率中位数为 11.1%，P90 为 24.4%。按 3 年半衰期向 18.1%（扣 SBC 口径）收敛，留一 MAE 为 7.26 个百分点，而保持起点利润率为 16.56。建模者对这些公司的后续历史并非不知情。
-
-### 3.3 收入增长持续性（开发阶段）
-
-```math
-g_t=g_\infty+(g_0-g_\infty)\,2^{-t/H_g},\qquad g_0=\ln\frac{R_0}{R_{-1}},\qquad \ln\frac{R_h}{R_0}=\sum_{t\le h}g_t
-```
-
-| 模型（留一 MAE，对数收入） | 18个观测 |
-|---|---:|
-| 收入持平 | 1.436 |
-| 保持 $g_0$ | 0.660 |
-| 引擎式：从 $g_0$ 线性衰减7年 | 0.242 |
-| 拟合衰减（$H_g$ = 4，$g_\infty$ = 6.5%） | 0.221 |
-
-引擎衰减的形状和拟合衰减差不多好。从 81 出发的基准路径相当于一家 $g_0\approx$ 0.24–0.29 的 SaaS 公司，处于样本第 17–33 百分位。Anthropic 实际的 $g_0\approx$ 2.57，远高于样本最大值 0.63，因此这些证据无法判断起点是否合适。默认值未作修改。
-
-### 3.4 退出（开发阶段）
-
-| 名单（5年） | 家数 | 被收购 | 破产 | 年化收购率 |
-|---|---:|---:|---:|---:|
-| 云公司 2015 | 10 | 5 | 0 | ≈12% |
-| 云公司 2020 | 14 | 1 | 0 | ≈2% |
-| 互联网 1999 | 18 | 2 | 2 | — |
-
-被收购的云公司规模为 30–260 亿美元；2015 批次的 5 笔交易成交价为 2015 年 5 月市值的 1.0–2.2 倍（[事件数据](data/stage4_exit_events.csv)）。因此退出风险 $e$ 只计困境退出（§1.3.1）。
-
-### 3.5 已暴露云公司的五年股权回测（诊断）
-
-Bessemer 2020 年的 5 家公司，以 FY2020 数据为输入，比较 2025 年底市值。利润率向排除自身后拟合的 $m^\ast$ 收敛（§3.2）。
-
-| 指标 | 模型 | 市值不变 | 市销率不变 |
-|---|---:|---:|---:|
-| 股权 WAPE | 71.17% | 58.82% | 124.89% |
-| 股权偏差 | −49.37% | +17.73% | +124.89% |
-| 股权 Spearman | −0.3 | −0.6 | −0.6 |
-| 收入 / FCF WAPE | 16.25% / 37.91% | — | — |
-| 收入 / FCF Spearman | 0.9 / 0.7 | — | — |
-
-模型对基本面排序准确，对市值排序不准；股权误差主要来自估值倍数的分化（2025 年 FCF 的 10–104 倍）。其他版本：保持利润率 69.28%，旧的统一 15% 利润率 77.40%，WACC 8% 时 61.55%。
-
-### 3.6 早期实验（均为回顾性，均未晋级）
-
-| 实验 | 结果 | 脚本 |
+| 数据集 | 核对方式 | 结果 |
 |---|---|---|
-| 1999 年前十大公司 FY2000 即时预测 | MAPE 21.54%（不变基准 50.23%） | `company_oos` |
-| FY2001–04 固定衰减 | MAPE 304.61%，弃用 | `company_oos` |
-| 五年饱和模型，留一公司 | WAPE 41.08%（不变基准 61.19%） | `five_year` |
-| 1999 年外部队列 | 饱和模型 WAPE 60.21%（不变基准 69.97%） | `external_validation` |
-| 财务因子 / 协方差处理 | 外部无改善 | `covariance_factors`、`structural_factors` |
-| 2020 云公司收入，冻结的规模组合模型 | WAPE 16.25%（不变基准 50.81%） | `cloud_cycle` |
-| 联合引擎聚合约束 | 股权 WAPE 86.19% | `joint_model_audit` |
-| 股权损失训练迁移 | 88.48 / 61.40 / 65.63%（不变基准 58.82%） | `equity_training` |
-| 互联网公司竞争退出 | 独立 / 破产 / 合并 74 / 13 / 13% | `competing_risk` |
+| §3.2–3.4 的 SEC 数字 | XBRL 原始版本 vs 申报原文 | 205/205 一致（[记录](data/sec_reconciliation.csv)） |
+| 收购事件 | 两个独立来源 | 除 NetSuite 股权价值外全部（[事件](data/stage4_exit_events.csv)） |
+| 原有数据 | 申报原文；市值用第二网站 | SEC 295/295 一致；PayPal 现金已修正（13.002→13.083）；替换 8 个失效链接（[记录](data/legacy_reconciliation.csv)） |
+| 待核 | — | IDC 分行业、JPM/ITU、Cisco/CMGI/VeriSign 1998–99 |
 
-### 3.7 敏感性（基准，正常周期）
+### 3.1 发布门槛
 
-| 版本 | 股权 |
+```math
+\text{发布}\iff N_{\text{fam}}\ge10\ \wedge\ N_{\text{cycle}}\ge2\ \wedge\ \mathrm{WAPE}_V\le30\%\ \wedge\ |\mathrm{bias}_V|\le15\%\ \wedge\ \mathrm{WAPE}_V<\min(\text{市值不变},\ \text{市销率不变})
+```
+
+当前阻塞项（`python -m evaluation.validation_gate --audit`）：
+
+| # | 阻塞项 | 状态 |
+|---|---|---|
+| 1 | 未触碰的最终测试 | cloud2018 名单规则已冻结（[规则](evaluation/final2018/roster_rule.md)）；名单未选出 |
+| 2 | 完整模型按市值误差训练 | 未开始 |
+| 3 | 经验证的公司画像（12 项输入） | 0 / 17 |
+| 4 | 生产模型合同与运行轨迹 | 未开始 |
+| 5 | 冻结清单、独立复核人 | 复核人未指定 |
+
+被收购公司按成交时支付的股权价值、在期限 $\max(1,\mathrm{round}(\tau))$ 评分（[规则](evaluation/acquisition_endpoint_policy.md)，已批准）。
+
+### 3.2 利润率路径
+
+```math
+m=\frac{CFO-\text{资本开支}-\text{资本化软件}}{\text{收入}}
+```
+
+第 4 阶段，只评分一次（[预注册](evaluation/stage4_margin_preregistration.md)、[评分](evaluation/stage4_margin_score.json)），11 家，MAE（百分点）：
+
+| 模型 | 开发留一 | 第 4 阶段 | 2015 | 2020 |
+|---|---:|---:|---:|---:|
+| 维持 | 9.64 | 23.44 | 18.60 | 25.26 |
+| 渐变到 15% | 11.12 | 15.07 | 13.39 | 15.69 |
+| 样本均值 | 9.28 | 8.63 | 11.45 | 7.57 |
+| 收敛，$H$=3 | 8.56 | **6.77** | 10.10 | 5.52 |
+| 杠杆（预注册选择） | **4.94** | 8.87 | 5.99 | 9.94 |
+
+预注册选择未采用（输给样本均值）。18 个观测扣 SBC 后：中位数 11.1%，P90 24.4%；$H$=3 收敛到 18.1% 的留一误差 7.26，维持为 16.56。
+
+### 3.3 增长与退出
+
+```math
+g_t=g_\infty+(g_0-g_\infty)2^{-t/H_g},\qquad \ln\tfrac{R_h}{R_0}=\textstyle\sum_{t\le h}g_t
+```
+
+| 留一 MAE，对数收入（18 个） | 不变 | 维持 $g_0$ | 引擎渐变 | 拟合 $H_g$=4、$g_\infty$=6.5% |
+|---|---:|---:|---:|---:|
+| | 1.436 | 0.660 | 0.242 | 0.221 |
+
+Anthropic $g_0\approx2.57$，面板最大 0.63：超出样本范围。
+
+| 5 年名单 | n | 被收购 | 破产 |
+|---|---:|---:|---:|
+| 云 2015 | 10 | 5 | 0 |
+| 云 2020 | 14 | 1 | 0 |
+| 互联网 1999 | 18 | 2 | 2 |
+
+收购价为此前市值的 1.0–2.2 倍 ⇒ $e$ 只计困境退出。
+
+### 3.4 市值回测，云 2020（已暴露，诊断）
+
+| | 模型 | 市值不变 | 市销率不变 |
+|---|---:|---:|---:|
+| $V$ WAPE / 偏差 | 71.17% / −49.37% | 58.82% / +17.73% | 124.89% / +124.89% |
+| $V$ Spearman | −0.3 | −0.6 | −0.6 |
+| $R$ / FCF WAPE | 16.25% / 37.91% | — | — |
+
+基本面准，估值倍数不准（2025 年 P/FCF 10–104 倍）。
+
+### 3.5 其他实验（均未采用）
+
+| 实验 | 结果 |
+|---|---|
+| 1999 年预测 FY2000 | MAPE 21.54%（不变 50.23%） |
+| 5 年饱和模型，按公司留一 | WAPE 41.08%（不变 61.19%） |
+| 外部 1999 样本 | WAPE 60.21%（不变 69.97%） |
+| 联合引擎，聚合约束版 | $V$ WAPE 86.19% |
+| 市值误差训练迁移 | 88.48 / 61.40 / 65.63%（不变 58.82%） |
+
+敏感性，基准 494.63：去健康度 317.36 · 去停留期 499.11 · 去供应商 404.64 · 全关 259.22 · 寒冬/繁荣 145.51/524.66 · 成本立即到位 583.92 · $H$=6.8：417.5。
+
+### 3.6 可比公司校准（[预注册](evaluation/margin_scale_preregistration.md)）
+
+**5 年后利润率**，368 个公司-年，39 个公司族，按族留一（[面板](data/margin_scale_panel.csv)，有幸存者偏差）：
+
+| 维持 | 均值 | **线性** | 收敛 | 岭回归 | GBM | GP | MLP |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 11.14 | 15.35 | **9.24** | 9.56 | 10.03 | 10.48 | 12.39 | 11.38 |
+
+MAE（百分点）。ML 均未胜过线性 ⇒ 不采用。线性：$m_{t+5}=.60\,m_t+.108$ ⇒ 长期 27.1%，半衰期 6.8 年。
+
+**长期利润率**
+
+```math
+m^\ast_i=\tfrac13\textstyle\sum_{t=T-2}^{T}\mathrm{OI}_{it}/R_{it},\quad i\in\{\text{平台公司},\ R\ge20\},\qquad (c^\ast,o^\ast)=(1-m^\ast)(s,\,1-s)
+```
+
+$m^\ast$：MSFT 45.7、微软智能云 42.2、Meta 39.4、Adobe 34.1、AWS 33.2、Alphabet 30.5、Oracle 30.1、Netflix 25.6、Intuit 25.3、Salesforce 17.8、Google Cloud 14.3% ⇒ P10/P50/P90 = 17.8/30.5/42.2%。$s$ = 微软智能云 营业成本/(营业成本+运营费用)，FY24–26 = 59.6/65.1/71.6%。
+
+**折现率**
+
+```math
+\beta_u=\frac{\beta_L}{1+(1-t)D/E},\qquad W=\tfrac{E}{D+E}\big[r_f+\beta_u(1+(1-t)\tfrac DE)\,\mathrm{ERP}\big]+\tfrac{D}{D+E}(r_f+1\%)(1-t)
+```
+
+$r_f$=5.0%，ERP=4.14%（Damodaran，2026 年 9 月），13 家可比 β（[输入](data/wacc_inputs.csv)），$D/E$=0.09 ⇒ $\beta_u$ 取 P75/P50/P25 时 $W$ = 9.38/8.86/7.68%。ERP 3.56/6.05% ⇒ 8.31/10.65%。
+
+| 基准 $V$ | |
 |---|---:|
-| 基准 | 494.63 |
-| 去掉财务健康隐状态 | 317.36 |
-| 去掉额外停留期机制 | 499.11 |
-| 去掉供应商转移 | 404.64 |
-| 全部关闭（开放生命周期） | 259.22 |
-| 恒定寒冬 / 繁荣 | 145.51 / 524.66 |
-| 成本率第1年直接到长期值 | 583.92 |
+| 原手设（$c^\ast$ .48，$o^\ast$ .25，$W$ 12%） | 249.22 |
+| + 估计成本 | 292.5 |
+| 仅估计 $W$ | 421.1 |
+| 两者 | 494.63 |
+| 收入中心调到可比中位数 $R_5/R_1$=1.80（未采用） | 293.1 |
 
-### 3.8 基于可比公司的成本率与折现率（开发阶段，[预注册](evaluation/margin_scale_preregistration.md)）
-
-`python -m evaluation.margin_scale`。用于替代此前手设的长期成本率和 WACC。标签在注册前已公开，因此属于开发证据，不是盲测。
-
-**5 年后经营利润率**：368 个公司-年、39 个公司族，按公司族留一交叉验证（[面板数据](data/margin_scale_panel.csv)：40 家上市软件/云/互联网公司的 SEC XBRL 数据，以及 10-K 分部表中的 AWS、Google Cloud、微软智能云；存在幸存者偏差）。
-
-| 模型 | MAE（百分点） | 偏差（百分点） |
-|---|---:|---:|
-| 维持当前利润率 | 11.14 | −6.72 |
-| 样本均值 | 15.35 | −0.10 |
-| **线性部分调整** | **9.24** | −0.09 |
-| 规模收敛 | 9.56 | −0.15 |
-| 岭回归 | 10.03 | −0.16 |
-| 梯度提升 | 10.48 | −0.10 |
-| 高斯过程 | 12.39 | +1.52 |
-| MLP 16-16（深度学习对照） | 11.38 | −0.24 |
-
-没有任何 ML 模型优于线性基线，因此均未采用。拟合的调整（5 年斜率 0.60，长期 27.1%）意味着利润率半衰期约 6.8 年；若 $H$ 取 6.8 而非 3，基准股权为 417.5。
-
-**长期利润率 $m^\ast$**：收入 ≥ 200 亿美元的平台公司近三年平均经营利润率（MSFT 45.7%、微软智能云 42.2%、Meta 39.4%、Adobe 34.1%、AWS 33.2%、Alphabet 30.5%、Oracle 30.1%、Netflix 25.6%、Intuit 25.3%、Salesforce 17.8%、Google Cloud 14.3%）。P10/P50/P90 = 17.8% / 30.5% / 42.2%，对应悲观/基准/乐观。成本中算力占比取微软智能云 FY2024–26 营业成本 /（营业成本 + 运营费用）：59.6% / 65.1% / 71.6%。
-
-**WACC**：CAPM，10 年期国债 5.0%，Damodaran 隐含 ERP 4.14%（2026 年 9 月），13 家可比公司（GOOGL、MSFT、AMZN、NVDA、ORCL、META、CRM、NOW、SNOW、DDOG、NET、PLTR、ADBE；[输入](data/wacc_inputs.csv)）的 5 年 β 去杠杆后按 Anthropic 负债/股权 0.09 重新加杠杆。悲观/基准/乐观取 β 的 P75/P50/P25：9.38% / 8.86% / 7.68%。ERP 取 3.56% / 6.05% 时为 8.31% / 10.65%。
-
-| 相对此前手设基准的变化 | 基准股权 |
-|---|---:|
-| 此前（成本 .48/.25，WACC 12%） | 249.22 |
-| 估计成本，WACC 12% | 292.5 |
-| 此前成本，估计 WACC | 421.1 |
-| 两者均为估计值 | 494.63 |
-
-**乐观为何过高及修正**（[补充预注册](evaluation/margin_scale_preregistration.md)）：原乐观情景让所有参数块同时取极端值。从基准 494.63 出发，单个块取 P90：收入 904.6、利润率 755.4、WACC 643.7、生命周期 608.3；全部同时取极端为 2,905。按数据分块独立抽样后 P90 为 1,043.01。
-
-基准收入路径相对可比公司仍偏乐观：第5年/第1年倍数 2.21，高于 ≥500 亿美元公司的中位数 1.80。若把收入中心调到该中位数，基准股权为 293.1（未采用，因为未预注册）。
-
-仍为手设：客户状态参数的中心值、资本开支率、长期增长率、需求天花板。
+乐观修正：各块单独取 P90 为 904.6（收入）、755.4（利润率）、643.7（$W$）、608.3（生命周期）；同时取极端 2,905；分块独立抽样 P90 为 1,043.01。
 
 ## 4. 复现
 
 ```bash
-pip install numpy scipy
+pip install numpy scipy scikit-learn
 python -m unittest discover -s evaluation -p 'test_*.py'   # 136 项测试
 python -m evaluation.validation_gate --audit
 python -m models.joint_customer_states
 python -m evaluation.reverse_dcf --equity 1200
-python -m evaluation.margin_path --verify
-python -m evaluation.margin_development
-python -m evaluation.growth_persistence
-python -m evaluation.saas_exit
-python -m evaluation.cloud_equity
 python -m evaluation.margin_scale
+python -m evaluation.margin_path --verify
+python -m evaluation.cloud_equity
 ```
 
-数据定义：[data/README.md](data/README.md)。研究规范：[MODEL_VALIDATION_PROTOCOL.md](MODEL_VALIDATION_PROTOCOL.md)、[AGENTS.md](AGENTS.md)。
+[data/README.md](data/README.md) · [MODEL_VALIDATION_PROTOCOL.md](MODEL_VALIDATION_PROTOCOL.md) · [AGENTS.md](AGENTS.md)
