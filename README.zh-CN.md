@@ -602,6 +602,43 @@ $
 
 [退出证据](data/dotcom_exit_events.csv) · [并购证据](data/dotcom_acquisition_components.csv) · [模型](evaluation/competing_risk.py)
 
+#### 财务解释变量与协方差收缩
+
+解释变量：1999收入对数、截断的1998—99对数增长、毛利率、经营现金流/收入。16家输入覆盖16/14/11/8；缺失和非完整年度增长仅用训练折中位数填补，现金存量口径不一致，暂不纳入回归。历史重述限制仍在。原队列填补后规模/增长相关−0.825，毛利/现金流利润率+0.671，VIF为3.41/3.55/1.88/1.98。相关不等于必须删因子；对比岭回归、协方差收缩白化、主成分回归、顺序残差化。残差训练折正交，不保证未来正交。超参数及模型选择只用2000—03年内层留一公司验证，每家公司等权，不使用2004终点拟合。外部队列此前已观察，故属于回顾性诊断。
+
+$
+z_{ij}=(x_{ij}-\mu_j)/\sigma_j,\qquad C=Z^\top Z/n
+$
+
+$
+C_\alpha=(1-\alpha)C+\alpha I,\qquad \widetilde Z=Z C_\alpha^{-1/2}
+$
+
+$
+z_j^\perp=z_j-Z_{<j}(Z_{<j}^\top Z_{<j})^+Z_{<j}^\top z_j
+$
+
+$
+\widehat\beta=\arg\min_\beta\sum_i w_i(y_i-X_i\beta)^2+\lambda\|\beta_F\|_2^2
+$
+
+$
+\widehat R_{it}=R^{sat}_{it}\exp\left[(1-2^{-t})(b_0+z_i^\perp b)\right]
+$
+
+| Model | Original MAPE | Original WAPE | External MAPE | External WAPE |
+|---|---:|---:|---:|---:|
+| OLS | 63.62% | 63.95% | 643.21% | 317.98% |
+| Ridge | 67.68% | 62.00% | 289.60% | 138.37% |
+| Covariance shrinkage | 57.85% | 32.65% | 213.92% | 116.94% |
+| PCR | 67.05% | 35.08% | 147.66% | 89.91% |
+| Orthogonal residuals | 52.27% | 18.62% | 227.48% | 123.28% |
+| Saturation | 76.48% | 41.08% | 71.75% | 60.21% |
+| Anchored residual correction | 78.41% | 50.96% | 84.68% | 63.45% |
+| Nested method selection | 64.77% | 36.41% | 227.48% | 123.28% |
+
+残差化降低原样本WAPE但外部退化；基于衰减模型的残差修正更稳定，但仍未胜过未修正衰减模型。暂不迁移因子系数至Anthropic。现金跑道、债务到期、客户集中度、份额和价格需要可比历史及Anthropic专属输入后才能估计。估值不变。[财务数据](data/dotcom_cash_factors.csv) · [代码](evaluation/covariance_factors.py)
+
 ### 8.3 Anthropic 公司披露参数及敏感性
 
 [正式招股书](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm)及[费用披露表](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm)支持[公司特定数据](data/company_specific_anchors.csv)：TTM 消费超过十万美元的客户 11,900+，超过百万美元 1,900+，超过千万美元约 250，第一组贡献 26.1B 收入。收入阈值嵌套，不等于企业生命周期；900% NRR 为特定旧客户群同比季度收入比，排除个人固定订阅，不等于公司未来增长率。
@@ -637,7 +674,7 @@ c_{\mathrm{compute}}=18.808/33.242=56.58\%,\quad c_{\mathrm{other}}=15.694/33.24
 
 ## 9. 复现与数据
 
-47项本地测试通过，含基准嵌套、概率行和、累计晋级、人口守恒、预算边界、初始账单及可复现性。完整估值模型仍未完成样本外验证。主要未识别参数：国家级付费率、真实企业收入权重、资金来源、财务转移、市场捕获及供应商迁移。
+50项本地测试通过，含基准嵌套、概率行和、累计晋级、人口守恒、预算边界、初始账单及可复现性。完整估值模型仍未完成样本外验证。主要未识别参数：国家级付费率、真实企业收入权重、资金来源、财务转移、市场捕获及供应商迁移。
 
 ```bash
 python -m models.joint_customer_states
@@ -647,6 +684,7 @@ python -m evaluation.growth_comparison
 python -m evaluation.fundamental_growth
 python -m evaluation.external_validation
 python -m evaluation.competing_risk
+python -m evaluation.covariance_factors
 python -m unittest discover -s evaluation -v
 ```
 
