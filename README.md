@@ -277,7 +277,7 @@ One common factor moves every scenario parameter together toward bear ($z<0$) or
 
 ### 3.0 Data provenance
 
-Every SEC figure used in §3.2–3.4 has two sources: original-vintage XBRL, and the figure printed in the filed document. That is 205 values from 41 filings, all matching exactly ([record](data/sec_reconciliation.csv); 34 are reported in USD millions and reconcile only to that rounding). Each acquisition has two independent sources ([events](data/stage4_exit_events.csv)); NetSuite's equity value rests on one. A test fails if any of these figures is unreconciled.
+Every SEC figure used in §3.2–3.4 has two sources: original-vintage XBRL, and the figure printed in the filed document. That is 205 values from 41 filings, all matching exactly ([record](data/sec_reconciliation.csv); 34 are reported in USD millions and reconcile only to that rounding). Each acquisition has two independent sources ([events](data/stage4_exit_events.csv)); NetSuite's equity value rests on one. A test fails if any of these figures is unreconciled. The repository's older data was checked the same way ([record](data/legacy_reconciliation.csv)): all 295 SEC values match the filings; PayPal cash was wrong (13.002→13.083), the cloud cohort cash definition was harmonized to cash + short-term investments, and eight dead links were replaced. Non-SEC sources are partly checked; 7 groups are still pending.
 
 ### 3.1 Release gate
 
@@ -332,13 +332,13 @@ Five Bessemer 2020 issuers, FY2020 inputs, end-2025 market cap. Margins converge
 
 | Metric | Model | Flat cap | Constant P/S |
 |---|---:|---:|---:|
-| Equity WAPE | 70.98% | 58.82% | 124.89% |
-| Equity bias | −49.20% | +17.73% | +124.89% |
+| Equity WAPE | 71.17% | 58.82% | 124.89% |
+| Equity bias | −49.37% | +17.73% | +124.89% |
 | Equity Spearman | −0.3 | −0.6 | −0.6 |
 | Revenue / FCF WAPE | 16.25% / 37.91% | — | — |
 | Revenue / FCF Spearman | 0.9 / 0.7 | — | — |
 
-The model ranks fundamentals well but not market caps; equity error is mostly multiple dispersion (10x–104x 2025 FCF). Variants: hold margin 69.09%; old shared 15% margin 77.21%; WACC 8% 61.37%.
+The model ranks fundamentals well but not market caps; equity error is mostly multiple dispersion (10x–104x 2025 FCF). Variants: hold margin 69.28%; old shared 15% margin 77.40%; WACC 8% 61.55%.
 
 ### 3.6 Earlier experiments (all retrospective, none promoted)
 
@@ -350,7 +350,7 @@ The model ranks fundamentals well but not market caps; equity error is mostly mu
 | External 1999 cohort | saturation WAPE 60.21% (flat 69.97%) | `external_validation` |
 | Financial factors / covariance | no external improvement | `covariance_factors`, `structural_factors` |
 | Cloud 2020 revenue, frozen size blend | WAPE 16.25% (flat 50.81%) | `cloud_cycle` |
-| Joint engine, aggregate restriction | equity WAPE 86.07% | `joint_model_audit` |
+| Joint engine, aggregate restriction | equity WAPE 86.19% | `joint_model_audit` |
 | Equity-loss training transfer | 88.48 / 61.40 / 65.63% (flat 58.82%) | `equity_training` |
 | Dot-com competing exits | standalone / bankrupt / merger 74 / 13 / 13% | `competing_risk` |
 
@@ -371,7 +371,7 @@ The model ranks fundamentals well but not market caps; equity error is mostly mu
 
 ```bash
 pip install numpy scipy
-python -m unittest discover -s evaluation -p 'test_*.py'   # 127 tests
+python -m unittest discover -s evaluation -p 'test_*.py'   # 129 tests
 python -m evaluation.validation_gate --audit
 python -m models.joint_customer_states
 python -m evaluation.reverse_dcf --equity 1200

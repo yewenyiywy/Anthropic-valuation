@@ -1,5 +1,5 @@
 company,year,reported_revenue,component_revenue,component,measurement,source
-eBay,2003,2.165096,.437622,PayPal,acquired segment external revenue,https://www.sec.gov/Archives/edgar/vprr/0603/06034393.pdf
+eBay,2003,2.165096,.437622,PayPal,acquired segment external revenue,https://www.sec.gov/Archives/edgar/data/1065088/000095013406003678/0000950134-06-003678.txt
 Yahoo,2003,1.625097,.226,US acquisitions,incremental year-over-year US revenue only,https://www.sec.gov/Archives/edgar/data/1011006/000104746905006235/a2153243z10-k.htm
 Yahoo,2004,3.574517,.790,US acquisitions,incremental year-over-year US revenue only,https://www.sec.gov/Archives/edgar/data/1011006/000104746905006235/a2153243z10-k.htm
 VeriSign,2004,1.166455,.1808,Jamba,acquired business revenue since June closing,https://www.sec.gov/Archives/edgar/data/1014473/000119312505052424/d10k.htm

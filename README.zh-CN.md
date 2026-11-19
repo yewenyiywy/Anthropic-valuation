@@ -277,7 +277,7 @@ Z_{t}\sim P_Z,\qquad z\sim\mathrm{Tri}(-1,0,1),\qquad \theta(z)=\theta_{\mathrm{
 
 ### 3.0 数据来源核对
 
-§3.2–3.4 使用的每个 SEC 数字都有两个来源：原始时点的 XBRL 数据，以及申报原文中印出的数字。共 41 份申报、205 个数，全部完全一致（[核对记录](data/sec_reconciliation.csv)；其中 34 个按百万美元披露，只能核对到这一精度）。每笔收购都有两个独立来源（[事件数据](data/stage4_exit_events.csv)），只有 NetSuite 的股权价值仍依赖单一来源。任何数字未经核对，测试都会失败。
+§3.2–3.4 使用的每个 SEC 数字都有两个来源：原始时点的 XBRL 数据，以及申报原文中印出的数字。共 41 份申报、205 个数，全部完全一致（[核对记录](data/sec_reconciliation.csv)；其中 34 个按百万美元披露，只能核对到这一精度）。每笔收购都有两个独立来源（[事件数据](data/stage4_exit_events.csv)），只有 NetSuite 的股权价值仍依赖单一来源。任何数字未经核对，测试都会失败。仓库原有数据也按同样方法逐条核对（[核对记录](data/legacy_reconciliation.csv)）：295 个 SEC 数字全部与申报原文一致；PayPal 现金有误（13.002→13.083），云计算样本的现金口径统一为现金加短期投资，8 个失效链接已替换。非 SEC 来源部分核对，仍有 7 组待核。
 
 ### 3.1 发布门禁
 
@@ -332,13 +332,13 @@ Bessemer 2020 年的 5 家公司，以 FY2020 数据为输入，比较 2025 年�
 
 | 指标 | 模型 | 市值不变 | 市销率不变 |
 |---|---:|---:|---:|
-| 股权 WAPE | 70.98% | 58.82% | 124.89% |
-| 股权偏差 | −49.20% | +17.73% | +124.89% |
+| 股权 WAPE | 71.17% | 58.82% | 124.89% |
+| 股权偏差 | −49.37% | +17.73% | +124.89% |
 | 股权 Spearman | −0.3 | −0.6 | −0.6 |
 | 收入 / FCF WAPE | 16.25% / 37.91% | — | — |
 | 收入 / FCF Spearman | 0.9 / 0.7 | — | — |
 
-模型对基本面排序准确，对市值排序不准；股权误差主要来自估值倍数的分化（2025 年 FCF 的 10–104 倍）。其他版本：保持利润率 69.09%，旧的统一 15% 利润率 77.21%，WACC 8% 时 61.37%。
+模型对基本面排序准确，对市值排序不准；股权误差主要来自估值倍数的分化（2025 年 FCF 的 10–104 倍）。其他版本：保持利润率 69.28%，旧的统一 15% 利润率 77.40%，WACC 8% 时 61.55%。
 
 ### 3.6 早期实验（均为回顾性，均未晋级）
 
@@ -350,7 +350,7 @@ Bessemer 2020 年的 5 家公司，以 FY2020 数据为输入，比较 2025 年�
 | 1999 年外部队列 | 饱和模型 WAPE 60.21%（不变基准 69.97%） | `external_validation` |
 | 财务因子 / 协方差处理 | 外部无改善 | `covariance_factors`、`structural_factors` |
 | 2020 云公司收入，冻结的规模组合模型 | WAPE 16.25%（不变基准 50.81%） | `cloud_cycle` |
-| 联合引擎聚合约束 | 股权 WAPE 86.07% | `joint_model_audit` |
+| 联合引擎聚合约束 | 股权 WAPE 86.19% | `joint_model_audit` |
 | 股权损失训练迁移 | 88.48 / 61.40 / 65.63%（不变基准 58.82%） | `equity_training` |
 | 互联网公司竞争退出 | 独立 / 破产 / 合并 74 / 13 / 13% | `competing_risk` |
 
@@ -371,7 +371,7 @@ Bessemer 2020 年的 5 家公司，以 FY2020 数据为输入，比较 2025 年�
 
 ```bash
 pip install numpy scipy
-python -m unittest discover -s evaluation -p 'test_*.py'   # 127 项测试
+python -m unittest discover -s evaluation -p 'test_*.py'   # 129 项测试
 python -m evaluation.validation_gate --audit
 python -m models.joint_customer_states
 python -m evaluation.reverse_dcf --equity 1200
