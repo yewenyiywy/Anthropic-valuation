@@ -1,0 +1,21 @@
+episode,rank,company,family,ranking_value,ranking_unit,ranking_date,origin,target,eligibility,source
+cloud2015,1,Salesforce,salesforce,50.537,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,exposed,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2015,2,LinkedIn,linkedin,26.285,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,candidate,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2015,3,Workday,workday,16.915,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,candidate,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2015,4,ServiceNow,servicenow,13.517,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,exposed,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2015,5,NetSuite,netsuite,7.728,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,candidate,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2015,6,Ultimate Software Group,ultimate software group,4.924,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,candidate,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2015,7,Athenahealth,athenahealth,4.819,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,candidate,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2015,8,Veeva,veeva,4.186,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,candidate,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2015,9,Medidata Solutions,medidata solutions,3.302,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,candidate,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2015,10,Proofpoint,proofpoint,2.847,market_cap_usd_b,2015-05-29,2015-12-31,2020-12-31,candidate,https://www.bvp.com/atlas/state-of-the-cloud-2015
+cloud2020,1,Fastly,fastly,22453039,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,candidate,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
+cloud2020,2,Zoom,zoom,15109970,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,candidate,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
+cloud2020,3,Zscaler,zscaler,12247684,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,candidate,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
+cloud2020,4,DocuSign,docusign,11829622,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,candidate,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
+cloud2020,5,Datadog,datadog,11608781,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,candidate,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
+cloud2020,6,Wix,wix,11395641,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,candidate,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
+cloud2020,7,Shopify,shopify,11061027,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,exposed,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
+cloud2020,8,Twilio,twilio,10889595,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,candidate,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
+cloud2020,9,Cloudflare,cloudflare,10381713,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,candidate,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
+cloud2020,10,Coupa,coupa,10285941,etf_position_usd,2020-06-30,2020-12-31,2025-12-31,candidate,https://www.sec.gov/Archives/edgar/data/1350487/000119312520233985/d944855dncsr.htm
