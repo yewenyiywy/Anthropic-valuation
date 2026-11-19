@@ -49,12 +49,29 @@ SCENARIOS = {
 
 # Illustrative effective demand ceilings (not observed TAM), subscription overlap,
 # and corporate lifecycle transition probabilities. No empirical calibration implied.
+# Exit hazards are the SAME annual values the joint production model uses, so the
+# reduced models, the historical backtests and the Anthropic run share one tail:
+# bear = all-cause BCG large-firm delisting (8%/5y), base = that rate times the
+# Daepp distress share (4.5%+3.5%), bull = historical large-US failure 0.09%/yr.
+LARGE_DELIST_ANNUAL = 1-(1-.08)**(1/5)
+EXIT_HAZARD = dict(bear=LARGE_DELIST_ANNUAL, base=LARGE_DELIST_ANNUAL*(.045+.035), bull=.0009)
 for name, extra in {
-    'bear': dict(ceiling=2, personal=.5, employer0=.4, employer_end=.8, cannibal=.8, exit=.12, decline=.30, renew=.03),
-    'base': dict(ceiling=4, personal=.5, employer0=.4, employer_end=.7, cannibal=.5, exit=.06, decline=.20, renew=.08),
-    'bull': dict(ceiling=8, personal=.5, employer0=.4, employer_end=.6, cannibal=.2, exit=.03, decline=.10, renew=.15),
+    'bear': dict(ceiling=2, personal=.5, employer0=.4, employer_end=.8, cannibal=.8, exit=EXIT_HAZARD['bear'], decline=.30, renew=.03),
+    'base': dict(ceiling=4, personal=.5, employer0=.4, employer_end=.7, cannibal=.5, exit=EXIT_HAZARD['base'], decline=.20, renew=.08),
+    'bull': dict(ceiling=8, personal=.5, employer0=.4, employer_end=.6, cannibal=.2, exit=EXIT_HAZARD['bull'], decline=.10, renew=.15),
 }.items():
     SCENARIOS[name].update(extra)
+
+def tail_margins(p, tax=.25):
+    """Steady-state after-tax cash margins (mature, declining, renewed, exited).
+
+    Derived from the SAME scenario cost ratios used in years 1-10 instead of a
+    hard-coded 15%, so the tail cannot silently flip a loss-making scenario into
+    a profitable one. Declining/renewed keep the previous 0.2x / 4/3x ratios.
+    """
+    pre=1-p['cost_ratio']-p['other_ratio']-p['capex']
+    m=pre-tax*max(pre,0)
+    return (m,.2*m,min(.60,4*m/3) if m>0 else m,0.)
 
 def overlap_factor(employer, cannibal):
     return 1-employer*cannibal
@@ -66,29 +83,48 @@ def commitment_floor(t, o):
     if t <= 19: return (o['commit_total']-o['commit_to_2030'])/15
     return 0
 
-def lifecycle_tail(revenue, p, o, start=10, horizon=30, margins=(.15,.03,.20,0)):
-    """Finite Markov reward model: mature, declining, renewed, exited.
+def lifecycle_tail(revenue, p, o, start=10, horizon=30, margins=None, continuation=True, recenter=True):
+    """Markov reward continuation: mature, declining, renewed, exited.
 
     Revenue mass tracks E[revenue * 1(state)], preserving path-dependent growth.
-    Exit receives zero operating revenue; expected outstanding compute commitments
-    remain charged separately in this conservative no-release stress.
-    No terminal sale or liquidation recovery at horizon.
+    Mature revenue grows at the scenario's terminal_growth (previously 0%).
+    Years start+1..horizon are explicit (trace + commitment schedule); after the
+    horizon the same chain continues in closed form, PV = a B (I-B)^-1 mu, with
+    B = P diag(growth)/(1+W). This replaces the former zero-value truncation.
+    Limited liability: exited mass earns zero and equity no longer pays the
+    commitment shortfall after exit (shortfall is weighted by survival).
+    recenter: the raw state growth (1, .85, 1.08) with decline/renew rates implied
+    perpetual survivor shrinkage (base -4.1%/yr, bear -9.8%/yr) that no scenario
+    states. With recenter=True the growth vector is scaled so the survivor
+    long-run growth equals terminal_growth; states then carry dispersion and
+    timing only, and exit remains an explicit separate loss.
     """
-    e,d,u=p['exit'],p['decline'],p['renew']
-    P=((1-e-d-u,d,u,e),(.10,1-e-.10-u,u,e),(.40,d,1-e-.40-d,e),(0,0,0,1))
-    growth=(1.00,.85,1.08,0)
-    # margins are after variable compute, other costs, capex and tax; assumptions
-    mass=[revenue,0,0,0]; prob=[1,0,0,0]; pv=0; tail=[]
+    import numpy as np
+    e,d,u=p['exit'],p['decline'],p['renew']; w=p['wacc']; g=p.get('terminal_growth',0.)
+    if margins is None: margins=tail_margins(p)
+    P=np.array(((1-e-d-u,d,u,e),(.10,1-e-.10-u,u,e),(.40,d,1-e-.40-d,e),(0,0,0,1)))
+    growth=np.array((1+g,.85,1.08*(1+g),0.))
+    if recenter:
+        rho=max(abs(np.linalg.eigvals(P[:3,:3]*growth[None,:3])))
+        growth[:3]*=(1+g)*(1-e)/rho
+    A=P*growth[None,:]; mu=np.array(margins)
+    mass=np.array([revenue,0.,0.,0.]); prob=np.array([1.,0.,0.,0.]); pv=0.; tail=[]
     for t in range(start+1,horizon+1):
-        mass=[sum(mass[i]*P[i][j] for i in range(4))*growth[j] for j in range(4)]
-        prob=[sum(prob[i]*P[i][j] for i in range(4)) for j in range(4)]
-        # Extra commitment shortfall: aggregate lower bound (Jensen);
-        # exact expectation of max requires a full revenue-path distribution.
-        expected_rev=sum(mass)
-        shortfall=max(0,commitment_floor(t,o)-p['cost_ratio']*expected_rev)
-        fcf=sum(mass[j]*margins[j] for j in range(4))-shortfall
-        pv+=fcf/(1+p['wacc'])**t
-        tail.append(dict(year=t,revenue=expected_rev,fcf=fcf,alive=1-prob[3]))
+        mass=mass@A; prob=prob@P
+        alive=1-prob[3]; expected_rev=float(mass.sum())
+        # Survivor-conditional shortfall times survival (Jensen lower bound kept).
+        shortfall=alive*max(0,commitment_floor(t,o)-p['cost_ratio']*expected_rev/alive) if alive>0 else 0.
+        fcf=float(mass@mu)-shortfall
+        pv+=fcf/(1+w)**t
+        tail.append(dict(year=t,revenue=expected_rev,fcf=fcf,alive=float(alive),shortfall=shortfall))
+    if continuation:
+        if any(commitment_floor(t,o)>0 for t in range(horizon+1,horizon+40)):
+            raise ValueError('commitments extend past explicit horizon')
+        B=A/(1+w)
+        if max(abs(np.linalg.eigvals(B)))>=1: raise ValueError('tail growth must be below discount rate')
+        cont=float(mass@B@np.linalg.solve(np.eye(4)-B,mu))/(1+w)**horizon
+        pv+=cont
+        tail.append(dict(year='continuation',pv=cont))
     return pv,tail
 
 def forecast(p, o=None, years=10, personal_ceiling=None, enterprise_ceiling=None):

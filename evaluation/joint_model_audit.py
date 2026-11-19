@@ -66,7 +66,9 @@ def profile(r,p,theta,strict=False):
     o=dict(run_rate=r0,proforma_cash=float(r['cash20']),proforma_convertibles=float(r['debt20']),
            commit_total=0,commit_to_2030=0,commit_next12m=0)
     # Same finite lifecycle continuation; separately disclose unestimated tail.
-    def tail(revenue,scenario,observations): return lifecycle_tail(revenue,scenario,observations)
+    # Tail margin is the issuer's own origin FCFF proxy margin, not Anthropic's.
+    m=ebit-.25*max(0,ebit)+da-capex
+    def tail(revenue,scenario,observations): return lifecycle_tail(revenue,scenario,observations,margins=(m,.2*m,min(.60,4*m/3) if m>0 else m,0.))
     prof=dict(scenario=s,inputs=a,birth_share=0.,weights=[0]*7+[1.],retention=[1.]*4,
               start=(other,sub,0.),initialize=init,kernel=lambda regime:np.eye(72),
               vendor=lambda regime:np.tile(np.eye(7),(8,1,1)),birth_budget=lambda t,reg:0.,

@@ -11,7 +11,7 @@ from .netflix_benchmark import benchmark
 GROUPS=('early_startup','scaleup','mature_sme','large')
 INPUTS={
  'bear':dict(weights=(.30,.30,.25,.15), churn_factors=(1,.8,.65,.35), growth=.7,capture=.15,personal_ratio=.05,replacement=.5),
- 'base':dict(weights=(.15,.25,.30,.30), churn_factors=(.8,.55,.45,.20), growth=1,capture=.30,personal_ratio=.15,replacement=1),
+ 'base':dict(weights=(.15,.25,.30,.30), churn_factors=(.8,.55,.45,.20), growth=1,capture=None,personal_ratio=.15,replacement=1),
  'bull':dict(weights=(.05,.15,.30,.50), churn_factors=(.5,.35,.25,.10), growth=1.5,capture=.50,personal_ratio=.30,replacement=1.25),
 }
 
