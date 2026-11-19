@@ -6,7 +6,7 @@ Research snapshot: 2026-11-19. All amounts are USD billions unless noted.
 
 ## 1. Conclusion
 
-**Conditional mean equity residual: $164.04B (0.164T).** This is the average of 1,024 macro paths under base structural assumptions, not a fitted fair-value target. Cross-cycle five-year equity WAPE is 83.13%; valuation validation has failed.
+**Conditional mean equity residual: $164.04B (0.164T).** This is the average of 1,024 macro paths under base structural assumptions, not a fitted fair-value target. Reduced DCF equity WAPE is 83.13%; direct aggregate joint-engine diagnostic is 86.98%. Full customer-level validation is blocked; equity validation has failed.
 
 | Statistic | Equity residual |
 |---|---:|
@@ -728,6 +728,35 @@ Equity WAPE **83.13%**, MAPE 74.15%, signed bias -83.13%, ±20% hit rate zero. F
 
 **Valuation verification failed.** Revenue WAPE of 16.25% is not equity accuracy. Market value is not intrinsic value; fiscal-year/calendar mismatches remain. This is a reduced-state transfer, not validation of the full customer-level model. CFO-capex omits complete treatment of interest, SBC, financing and acquisitions. Do not multiply Anthropic valuation by the observed error ratio; independently calibrate margins, capital structure, lifecycle and discount rates.
 
+
+#### End-to-end joint-model audit: pre-training, training, post-training
+
+[Vintage company filings](data/cloud_company_vintage.csv) add FY2020 subscription revenue, operating income, depreciation and amortization, and FY2025 cash flows. Revenue ledgers reconcile. PayPal all-other is an unclassified proxy, not evidence of zero subscription; Salesforce D&A is approximate. ServiceNow 98% renewal is recorded but not equated with cohort retention.
+
+1. Pre-training: audit vintage, units, accounting definitions and ledger reconciliation; fail closed for missing customer data instead of borrowing Anthropic parameters.
+2. Training: calibrate revenue decay on 1999 issuers' 2000–03 histories only. Freeze size blend. Equity parameters have not been fitted; WACC, issuer exit and tail rewards remain assumptions.
+3. Post-training: call the original `forecast_joint()` company-profile interface directly under an aggregate restriction. Missing customer migration, vendor switching, trials and ceilings prevent full validation. The viewed 2020 cohort is diagnostic, not an untouched final test. Strict mode refuses unidentified profiles.
+
+```math
+FCFF_t^{proxy}=EBIT_t-0.25\max(EBIT_t,0)+DA_t-CapEx_t
+```
+
+Incremental working capital is assumed zero; economic SBC remains in EBIT. Observed CFO less capex differs in interest, working capital and SBC, so cash flow error is only a mismatched-definition diagnostic.
+
+```math
+\widehat V_5=(EV_0-\sum_{t=1}^{5}\frac{FCFF_t}{(1+W)^t})(1+W)^5+Cash_0-Debt_0
+```
+
+| Company | Predicted equity | Actual cap |
+|---|---:|---:|
+| Adobe | 33.11 | 146.51 |
+| Salesforce | 25.66 | 248.22 |
+| PayPal | 32.96 | 54.62 |
+| ServiceNow | 6.26 | 159.32 |
+| Shopify | 8.52 | 209.56 |
+
+Revenue WAPE 16.25%; cash-flow proxy WAPE 57.64% (definition mismatch); equity WAPE **86.98%**, MAPE 79.75%. Zero complete customer profiles. Do not reuse the revealed cloud cohort as an untouched final test. A newly frozen cohort and equity-loss calibration are required. Run `python -m evaluation.joint_model_audit`. Four added checks pass; 58 unittest tests pass.
+
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
 The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
@@ -747,6 +776,11 @@ c_{\mathrm{compute}}=18.808/33.242=56.58\%,\quad c_{\mathrm{other}}=15.694/33.24
 | Both reported expense ratios held constant | -41.19 |
 
 These are sensitivities only: accrual expense includes noncash items, and treating it as a cash ratio indefinitely is not a calibrated FCFF forecast. The updated bridge is a conditional accounting figure, not proof of completed financing or settlement. Customer life-stage weights, cohort transition probabilities, consumer conversion, and sustainable marginal cost are still unidentified. Do not replace the main conditional scenario with a claim of empirically validated fair value.
+
+
+#### Anthropic accounting re-audit
+
+[Source audit](data/anthropic_accounting_audit.csv): 9m2026 revenue 33.242, consumption 26.306, subscription 6.936, compute 18.808, operating loss 1.260, CFO 6.569, capex 0.925, lease prepayments 1.955, D&A 0.250, SBC 3.255, interest income 2.359 (USD B). CFO less capex is 5.644; additionally deducting lease prepayments gives 3.689; neither equals FCFF. The conditional 232.351 cash and 109.742 convertible amounts were not reverified because the final prospectus was inaccessible in this audit. Do not transfer unvalidated changes into a fair-value claim.
 
 #### Growth-decay transfer sensitivity
 
