@@ -1,5 +1,7 @@
 # Anthropic Valuation — Lifecycle DCF (v2)
 
+**English** · [简体中文](README.zh-CN.md)
+
 Research snapshot: 2026-11-19. Units: USD billions unless specified. Exploratory conditional stress tests, not fair-value targets.
 
 ## Results
