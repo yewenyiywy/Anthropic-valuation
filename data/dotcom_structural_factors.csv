@@ -1,0 +1,11 @@
+company,capex1999,development1999,development_ratio,cash_equivalents1999,cfo1999,major_customer_ge10,source,scope
+Cisco,.584,,.131,.827,4.438,0,https://www.cisco.com/c/dam/en_us/about/ac49/ac20/downloads/customer/annualreport/ar99/print/8_Financials.pdf,1999 fiscal year; no customer at least 10%
+Yahoo,.049548,.0675,,.233951,.2163,,https://www.sec.gov/Archives/edgar/data/1011006/000091205700014598/0000912057-00-014598-d1.html,product development; cash excludes marketable securities
+Amazon,.287055,.159722,,.133309,-.090875,,https://www.sec.gov/Archives/edgar/data/1018724/000089102000001638/v65477e10-ka.txt,technology and content broader than R&D
+eBay,.086907,.024847,,.221801,.0629,,https://www.sec.gov/Archives/edgar/data/1065088/000089161802001364/f79949e10-k.htm,product development; CFO verified prior filing
+Broadcom,.031278,,.229,.180816,.109315,1,https://www.sec.gov/Archives/edgar/data/1054374/000089256902000531/a78920e10-k.htm,restated; top five 66.6% implies at least one exceeds 10%
+Juniper Networks,.010020,.0415,,.158043,.020459,1,https://www.sec.gov/Archives/edgar/data/1043604/000089161801000244/f70571ex13-1.txt,top two 32% and 26%
+BroadVision,.013291,.014568,,.279823,.033346,,https://www.sec.gov/Archives/edgar/data/920448/000091205701506549/a2043641z10-k.txt,retrospective; R&D also in SEC 2002 report
+RealNetworks,.024559,,.293,.160955,.048187,,https://www.sec.gov/Archives/edgar/data/1046327/000089102002000225/v79646e10-k.htm,development excluding separately reported noncash compensation
+VeriSign,.006019,.0133,,,.014665,0,https://www.sec.gov/Archives/edgar/data/1014473/000101287002001292/d10k.txt,no customer at least 10%
+DoubleClick,.056146,.028364,,, -.038922,,https://www.sec.gov/Archives/edgar/data/1049480/000095011702000680/a32236.txt,product development and retrospective CFO
