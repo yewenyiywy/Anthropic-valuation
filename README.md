@@ -124,6 +124,40 @@ B_t=D_{US}G u c,\quad A=\frac{K_{US}}{D_{US}}f,\quad R_{birth,t}=\min(0.2J_t,B_t
 
 21 local tests pass including stochastic row sums, cumulative financing incidence, population conservation and birth-budget bounds. These are numerical validations, not predictive backtests.
 
+### Latest extension: joint health, duration, regime and vendor-state DCF
+
+Run `python -m models.joint_customer_states` (NumPy required). [Model](models/joint_customer_states.py), [source register](data/joint_state_anchors.csv). The base conditional-on-parameter mean equity across 1,024 macro paths (seed 42) is **$164.04B**; median $171.62B, P5–P95 $110.00–187.11B. Not a statistical confidence interval, fitted HMM, investment target or risk-neutral price. Normal-only equity $187.05B. The all-disabled normal path recovers previous $134.40B exactly.
+
+State tensor has 8 live enterprise states × 3 dwell buckets × 3 hidden health states × 7 vendor states; common macro state is a separate 3-state process. Closed enterprise mass is removed. Hidden health (distressed, funded/unprofitable, self-sustaining) uses an illustrative funding-stage proxy for the observation and Bayes posterior, not observed funding dates or profit labels.
+
+```math
+\pi_{0,h|y}=\frac{\pi_{0,h}P(y|h)}{\sum_k\pi_{0,k}P(y|k)},\qquad P(y=1|h)=(.15,.75,.25)
+```
+
+Normal health transition rows: (.67,.23,.10), (.18,.62,.20), (.04,.10,.86). Winter tilts toward distress, boom away. Conditional health death multipliers 1.6/1/.55 and spending .75/1/1.10 are assumptions applied annually. Non-seed duration buckets 0/1/2+ multiply promotion by .55/1/1.20; seed duration already represented in prior chain, no second seed duration multiplier. All current/new invoice cohorts start at dwell zero for non-seed (unknown actual tenure); reset on group change.
+
+```math
+P_Z=\begin{pmatrix}.60&.35&.05\\.18&.67&.15\\.08&.42&.50\end{pmatrix}
+```
+
+Regime order winter/normal/boom; death multipliers 1.5/1/.75, promotion and new-sales/birth multipliers .65/1/1.25. Not estimated: Carta 2023 funding fell 50%, deal count 24%; Q1 2024 closure count rose 58%, seed 102%, A 61%, B 133%, not closure hazards. Shared regime induces correlation; no additional idiosyncratic firm risk or parameter uncertainty simulated.
+
+Vendor states Claude-only, multi-with-Claude, OpenAI, Google, self-hosted, other, none; reward (1,.60,0,0,0,0,0). Ramp January 2026 79% of Claude payer accounts also pay OpenAI, used as equal gross budget initialization proxy normalized to actual Claude mass; not observed spend fraction. September 8% monthly firms changed top provider (not cancellation). Menlo 2026 estimates API spend shares 55/31/9% Claude/OpenAI/Google; not transition probabilities. Existing conditional commercial churn is routed to other providers/dormancy once, never additionally multiplied. Exit destination shares .35/.25/.15/.10/.15; reacquisition .06 annually from rivals and .035 from none (normal regime). Multi↔single conditional switches .12/.04, all assumptions. Rival states are aggregate competing destinations, not exclusive real-world vendor portfolios. Initial rival mass zero; new acquisitions and reactivation coexist, no finite outside market measured and possible overlap cannot be empirically resolved.
+
+```math
+X_{t+1}^{(b)}=\mathcal{K}_{Z_t}\left(X_t^{(b)}M_{Z_t}\right)+A_t^{(b)},\qquad R_t^{(b)}=\sum_{i,d,h,v}X_{idhv,t}^{(b)}r_v
+```
+
+K includes death/health/dwell/upgrade and spending, is reward weighted not stochastic; M is conditional provider transition. Separate invoice ledgers b (pilot, live, seats), existing personal cap/overlap, birth budget and industry cap retained; prior finite lifecycle tail uses year-10 revenue, no macro regime after year ten. Gross potential invoice mass is not firm count or competitor revenue. Compute commitment floor evaluated on each simulated path prior to averaging.
+
+| Normal-only scenario | Revenue Y1 | Y5 | Y10 | EV | Equity |
+|---|---:|---:|---:|---:|---:|
+| Bear |50.67|24.88|21.68|-305.36|-203.55|
+| Base |98.80|195.31|254.21|85.24|187.05|
+| Bull |115.69|396.70|734.42|910.53|1012.34|
+
+Normal base ablation equity: no latent health 155.27; no new duration effect 187.04; no explicit competitive switches 184.23; all three disabled 134.40. Effects interact and are not causal. Constant winter/normal/boom paths: 70.06/187.05/187.11. The cap binds in high demand paths, limiting upside. No negative residual among 1,024 base-regime paths does not imply insolvency probability zero; bear structural assumptions produce negative residual. 26 local tests pass (including baseline nesting, probability sums, normalized initial invoices, fixed-seed reproducibility). No predictive backtest.
+
 ## Mathematical valuation methodology
 
 All monetary variables are in **USD billions**, except unit prices. Time $t$ is measured in annual steps from the October 2026 run-rate snapshot. Quantities identified as assumptions are scenario inputs, not estimated facts.
