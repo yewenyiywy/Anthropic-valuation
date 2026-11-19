@@ -68,6 +68,35 @@ R_{\mathrm{consumer},t}
 
 US chatbot ever-use rates are not global paid conversion rates. Country GNI groups are not household-income groups. Unsupported markets must be excluded. The bottom-up function is implemented, but its missing country-level paid demand inputs prevent calibration; it is not added to the run-rate forecast.
 
+#### Netflix account-level calibration stress
+
+Netflix crossed 325M paid memberships in 2025 and reported an audience approaching 1B. An account is not a person: roughly three viewers share each paid membership. Define $N_N$ as paid accounts in billions, $A_N$ as viewers in billions, $q$ as viewers per account, and $k$ as assumed Claude individual paid accounts relative to Netflix paid accounts. The implied viewer-equivalent conversion is $k/q$, not $k$. This is a benchmark, not an identified AI conversion rate. China is excluded from Netflix; other service boundaries differ. Do not use global population as the denominator.
+
+```math
+N_C=N_N k=A_N\frac{k}{q},\qquad q=\frac{A_N}{N_N}\approx3.08
+```
+
+```math
+F_C=20\sum_r\frac{N_{N,r}}{\sum_j N_{N,j}}\frac{F_{N,r}}{17.20}\approx13.53
+```
+
+```math
+R_C=12N_CF_C
+```
+
+2024 regional paid memberships (millions) and monthly revenue per membership: US/Canada 89.625 / $17.20; EMEA 101.133 / $10.96; LATAM 53.327 / $8.24; APAC 57.541 / $7.29. Assume the same geographic account mix and relative price index; $20 is a North American price assumption. This does not establish actual Claude regional pricing. Paid account ratios 5%, 15%, 30% are illustrative, equivalent to approximately 1.63%, 4.88%, 9.75% of Netflix's audience. The optional DCF stress phases any personal revenue reduction in over five years and leaves employer invoices untouched. The original results above remain the uncapped baseline. No cap is asserted in the lifecycle tail; personal payers are net of employer substitution in the forecast.
+
+| Scenario | k | Paid accounts (M) | Revenue ceiling ($B) | Stress EV ($B) | Stress equity ($B) |
+|---|---:|---:|---:|---:|---:|
+| Bear | 5% | 16.25 | 2.64 | -286.94 | -185.13 |
+| Base | 15% | 48.75 | 7.91 | 78.46 | 180.27 |
+| Bull | 30% | 97.50 | 15.83 | 679.23 | 781.04 |
+
+[Netflix 2024 SEC 10-K](https://www.sec.gov/Archives/edgar/data/1065280/000106528025000044/nflx-20241231.htm) · [2025 Q4 shareholder letter](https://www.sec.gov/Archives/edgar/data/1065280/000106528026000033/ex991_q425.htm) · [Netflix supported markets](https://help.netflix.com/en/node/14164/).
+
+Reproduce: `python -m models.netflix_benchmark`.
+
+
 ### Step 3 — Bottom-up enterprise demand (independent cross-check)
 
 For country $c$, industry $j$, and firm-size group $k$:
