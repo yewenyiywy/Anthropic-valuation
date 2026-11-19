@@ -91,7 +91,7 @@ def lifecycle_tail(revenue, p, o, start=10, horizon=30):
         tail.append(dict(year=t,revenue=expected_rev,fcf=fcf,alive=1-prob[3]))
     return pv,tail
 
-def forecast(p, o=None, years=10, personal_ceiling=None):
+def forecast(p, o=None, years=10, personal_ceiling=None, enterprise_ceiling=None):
     o = observations() if o is None else o
     # October run rate is a starting intensity; segment split is September historical proxy.
     api = o["run_rate"] * o["consumption_9m26"] / o["revenue_9m26"]
@@ -128,10 +128,19 @@ def forecast(p, o=None, years=10, personal_ceiling=None):
         enterprise_sub *= 1+p['subscription_growth']*fade
         sub=personal+enterprise_sub
         # Conditional revenue ceiling, gradually reaching the assumed ceiling by year 10.
-        limit=o['run_rate']*(1+(p['ceiling']-1)*min(t/10,1))
-        scale=min(1,limit/(startup+trial+mature+sub))
-        startup*=scale; trial*=scale; mature*=scale
-        personal*=scale; personal_raw*=scale; enterprise_sub*=scale; sub=personal+enterprise_sub
+        if enterprise_ceiling is None:
+            limit=o['run_rate']*(1+(p['ceiling']-1)*min(t/10,1))
+            scale=min(1,limit/(startup+trial+mature+sub))
+            startup*=scale; trial*=scale; mature*=scale
+            personal*=scale; personal_raw*=scale; enterprise_sub*=scale
+        else:
+            # Independent demand envelope: no second aggregate ceiling.
+            # Consumption includes non-enterprise use, so this is a scope proxy.
+            budget=enterprise_ceiling(t)
+            scale=min(1,budget/(startup+trial+mature+enterprise_sub))
+            startup*=scale; trial*=scale; mature*=scale; enterprise_sub*=scale
+            limit=budget+personal
+        sub=personal+enterprise_sub
         revenue = startup+trial+mature+sub
         # Cash expense model: commitments are a floor, not added atop variable compute.
         # This allocates aggregate commitments evenly in two buckets (timing proxy).
