@@ -1,0 +1,43 @@
+{
+  "status": "BLOCKED",
+  "scope": "aggregate engine restriction; full validation blocked; previously viewed diagnostic",
+  "scores": {
+    "revenue5": {
+      "n": 5,
+      "mape": 0.19581495018469397,
+      "wape": 0.16247527744320436,
+      "hit20": 0.6
+    },
+    "fcf5": {
+      "n": 5,
+      "mape": 0.6195091590009784,
+      "wape": 0.5764091905305856,
+      "hit20": 0.2
+    },
+    "equity5": {
+      "n": 5,
+      "mape": 0.797456057223987,
+      "wape": 0.8698348288752122,
+      "hit20": 0.0
+    }
+  },
+  "blockers": [
+    "no independent untouched final test",
+    "no equity-loss training",
+    "no complete company profiles",
+    "cash flow target definitions differ",
+    "no frozen release manifest or independent review",
+    "equity WAPE exceeds release threshold"
+  ],
+  "missing": [
+    "customer revenue by lifecycle and financial health",
+    "pilot conversion and rollout",
+    "vendor switching and multi-homing",
+    "price/volume decomposition",
+    "gross acquisition and retention by cohort",
+    "customer demand ceilings",
+    "issuer survival/renewal transition calibration",
+    "company WACC",
+    "future capital structure and working capital"
+  ]
+}
