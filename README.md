@@ -677,6 +677,36 @@ $
 
 No meaningful external improvement; conservative selection recovers saturation externally, while original WAPE improves 1.12 percentage points. No fitted coefficient transfer or valuation change. Anthropic stored filing inputs imply 9m CFO margin 19.76%, capex ratio 2.78%, CFO minus capex $5.644B, cash/investments versus next-12-month gross commitments 1.86x, through-2030 commitments/cash 3.43x, financing/CFO 16.86x, top-five direct customer share 25% and HHI lower bound 0.0125. Gross commitment coverage is not runway or a net cash forecast; cash includes investments and does not match historical cash equivalents. CFO less capex is not FCFF, and compute leases/commitments require separate cash timing without double counting. [Data](data/dotcom_structural_factors.csv) · [Code](evaluation/structural_factors.py)
 
+
+#### Cross-cycle cloud validation (FY2020–FY2025)
+
+The [Bessemer State of Cloud 2020](https://www.bvp.com/atlas/state-of-the-cloud-2020) identified five public cloud companies above $50B market cap: Adobe, Salesforce, PayPal, ServiceNow, Shopify. Select all five, not later winners. FY2019/20 SEC filings are inputs; FY2025 SEC filings are outcomes. Forecast origin is after FY2020 reporting, not January 2020. See [data](data/cloud_cycle_cohort.csv).
+
+The previous size blend is frozen before this test:
+
+```math
+\widehat R_5=\widehat R_{size}^{1/2}(\widehat R_{sat}\widehat R_{recovery})^{1/4}
+```
+
+An endpoint prior fits the original and independent 1999 issuers with observed 2004 endpoints, minimizing mean absolute log error plus a fixed mature-growth penalty:
+
+```math
+L(\theta)=\frac1n\sum_i|\log(\widehat R_{i,5}(\theta)/R_{i,5})|+0.5|g_{\infty}|
+```
+
+| Model | WAPE | MAPE | Signed bias |
+|---|---:|---:|---:|
+| Flat | 50.81% | 55.34% | -50.81% |
+| Original | 25.16% | 27.52% | -25.16% |
+| Saturation | 38.12% | 42.01% | -38.12% |
+| Endpoint prior | 31.02% | 34.18% | -31.02% |
+| Size | 20.74% | 23.36% | -20.74% |
+| Blend | 18.61% | 21.70% | +2.84% |
+| Frozen size blend | 16.25% | 19.58% | -9.86% |
+| Fixed 15% log growth diagnostic | 15.94% | 17.10% | +7.28% |
+
+The 15% floor is an exploratory sensitivity, not a validated winner or a perpetual terminal growth rate. The frozen blend remains the benchmark; no Anthropic valuation adjustment is justified by these five surviving, large and heterogeneous issuers. This validates consolidated revenue only, not cash flow or equity value. Historical inputs may include retrospective restatements; cloud data have FY-specific cutoffs and M&A effects. No cloud outcomes enter the forecast fit (tested). Run `python -m evaluation.cloud_cycle`.
+
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
 The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
