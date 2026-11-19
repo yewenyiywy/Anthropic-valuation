@@ -462,13 +462,29 @@ Reduced-model references: lifecycle DCF 180.47; Netflix constraint 180.27; indus
 
 ### 8.2 Point-in-time company-specific validation
 
-Freeze the universe at the [September 8, 1999 top-ten market-cap ranking](https://www.internetnews.com/it-management/new-internet-giants-roam-the-street/), including the bankrupt and acquired issuers. [Vintage inputs](data/dotcom_vintage.csv) contain estimates from the [September 1999 Bear Stearns report, Exhibit 2](https://people.duke.edu/~charvey/Teaching/BA491_2000/Cc/Cc_BS.pdf) and separately identified SEC holdout outcomes. Blank cells are missing, not zero. The five available comparable CY2000 analyst forecasts have mean absolute percentage error 24.87%; this is an **external benchmark**, not validation of our joint-state model. The other five remain unscored. Acquisition/merger and fiscal-year scope must be reconciled before longer-horizon scoring.
+Freeze the universe at the [September 8, 1999 top-ten market-cap ranking](https://www.internetnews.com/it-management/new-internet-giants-roam-the-street/), including the bankrupt and acquired issuers. [Vintage inputs](data/dotcom_vintage.csv) contain estimates from the [September 1999 Bear Stearns report, Exhibit 2](https://people.duke.edu/~charvey/Teaching/BA491_2000/Cc/Cc_BS.pdf) and separately identified SEC holdout outcomes. Blank cells are missing, not zero. The five available comparable CY2000 analyst forecasts have mean absolute percentage error 24.87%; this is an **external benchmark**, not validation of our joint-state model. Five lack comparable external forecasts. Acquisition/merger and fiscal-year scope must be reconciled before longer-horizon scoring.
 
 ```math
 \operatorname{MAPE}=\frac1n\sum_i\left|\frac{\widehat R_i-R_i}{R_i}\right|
 ```
 
 The same joint transition engine now accepts an explicit company profile (initial ledgers, customer weights and retention, transition and vendor kernels, reward, births, market limits, costs and lifecycle tail). Missing profiles fail rather than borrowing Claude parameters. The formerly proposed normalized transfer is not a company-specific forecast and must not be counted as validation. Firm-level bankruptcy and acquisition need separately estimated absorbing states; the present customer-exit process is not such an estimator.
+
+The [ten-company fiscal-year panel](data/dotcom_fy_panel.csv) and [executable evaluation](evaluation/company_oos.py) now run a reduced-state ablation of the actual joint transition operator. With each issuer's own FY1998–99 revenue and identical 50% log-growth shrinkage and seven-year fade:
+
+```math
+\widehat R_{i,t}=\widehat R_{i,t-1}\exp\left[0.5\log(R_{i,1999}/R_{i,1998})\max(0,1-(t-1)/7)\right]
+```
+
+| Test | n | MAPE | WAPE | Within 20% |
+|---|---:|---:|---:|---:|
+| FY2000 nowcast | 10 | 21.54% | 19.41% | 50% |
+| FY2001–04 future holdouts | 23 | 304.61% | 64.35% | 13.04% |
+| One-year half-life stress, FY2001–04 | 23 | 87.72% | 33.48% | 26.09% |
+
+FY2000 flat-revenue and unattenuated-growth baselines have MAPE 50.23% and 129.32%. Seven original/reconciled input vintages yield 21.35% MAPE; three are retrospectively reconstructed. FY2000 overlaps the information-release dates, so it is a nowcast, not a fully prospective test. Missing post-merger or post-bankruptcy observations are censored, not treated as zero. The post-hoc half-life stress is not an independently validated calibration. Leave-one-company-out persistence fitted on FY1997–99 only yields 121.83% FY2000 MAPE and 88,714.78% FY2001–04 MAPE; boom-period growth persistence is not transferable.
+
+This is **not** a full customer-state or equity valuation backtest: aggregate revenue cannot identify customer-level acquisition, churn, pricing, costs or firm failure. Recall cannot be computed without defined and predicted failure labels. The long-horizon result rejects the aggregate growth extrapolation.
 
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
@@ -492,10 +508,11 @@ These are sensitivities only: accrual expense includes noncash items, and treati
 
 ## 9. Reproduction and data
 
-26 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. No predictive backtest. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+36 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
+python -m evaluation.company_oos
 python -m unittest discover -s evaluation -v
 ```
 
