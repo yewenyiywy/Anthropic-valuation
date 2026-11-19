@@ -62,3 +62,28 @@ WACC in `models/valuation.py` with distributions estimated from comparables.
 Customer-state parameters (startup, trial, conversion, rollout, volume, price,
 share, new, subscription growth, ceilings, cannibalisation), capex ratio and
 terminal growth.
+
+## Addendum 2026-11-19 (registered before computing the quantities below)
+
+Problem: the bull/bear scenarios move every parameter to its extreme at once
+(one common factor), so "bull" combines top-decile revenue, top-decile margin,
+bottom-quartile WACC and the most favourable lifecycle values. That is a
+stress corner, not a 90th-percentile outcome.
+
+Change to the production Monte Carlo (`simulate`):
+1. Four parameter blocks with separate factors: revenue (customer-state
+   scenario parameters and blended inputs), cost (cost_ratio, other_ratio,
+   capex), discount (wacc), lifecycle (terminal_growth, exit, decline, renew).
+2. Revenue dispersion from comparables: issuer-years with revenue >= $50B in
+   `data/margin_scale_panel.csv`; 4-year forward revenue multiple quantiles
+   q10/q50/q90. The revenue factor at the 10th/90th percentile is the value
+   at which the model's year-5/year-1 revenue multiple equals
+   base x q10/q50 and base x q90/q50 (bisection).
+3. Cost block: z = +-1 at the estimated P90/P10 (Target B). Discount block:
+   z = +-1 at the beta quartiles (Target C). Lifecycle block: unchanged
+   hand-set triangular factor.
+4. Dependence: Gaussian copula; revenue-cost correlation = Spearman rank
+   correlation between 4-year revenue multiple and the margin change over the
+   same 4 years in the panel; other pairs independent.
+5. Reported bear/base/bull become the P10/P50/P90 of the simulated equity;
+   the all-extremes corner is kept as a labelled stress test.

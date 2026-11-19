@@ -221,24 +221,97 @@ def draw_parameters(z,o=None):
     inp={k:val('base',k)+(val(side,k)-val('base',k))*w for k in BLEND_INPUTS}
     return scen,inp
 
-def simulate(name='base',n=256,seed=42,parameters=True):
-    """Macro regime paths, plus (default) scenario-parameter uncertainty.
+COST_KEYS=('cost_ratio','other_ratio','capex'); DISC_KEYS=('wacc',); LIFE_KEYS=('terminal_growth','exit','decline','renew')
 
-    parameters=False reproduces the former macro-only distribution, which
-    understated dispersion (P5-P95 110-187 vs. bear/bull -204/1012).
+def _block(k):
+    return 'cost' if k in COST_KEYS else 'disc' if k in DISC_KEYS else 'life' if k in LIFE_KEYS else 'rev'
+
+def draw_blocks(zr=0.,zc=0.,zw=0.,zl=0.,o=None):
+    """Block-wise draw (margin_scale addendum). Each block moves from base toward
+    bear (z<0) or bull (z>0) with its own factor; cost and discount blocks are
+    estimated quantiles and may extrapolate linearly to |z|<=2."""
+    z=dict(rev=max(-1.,min(1.,zr)),cost=max(-2.,min(2.,zc)),disc=max(-2.,min(2.,zw)),life=max(-1.,min(1.,zl)))
+    base=SCENARIOS['base']; scen={}
+    for k,v in base.items():
+        if not isinstance(v,(int,float)): continue
+        w=z[_block(k)]; side='bull' if w>=0 else 'bear'
+        scen[k]=v+(SCENARIOS[side][k]-v)*abs(w)
+    w=z['life']; side='bull' if w>=0 else 'bear'
+    scen['exit']=EXIT_HAZARD['base']+(EXIT_HAZARD[side]-EXIT_HAZARD['base'])*abs(w)
+    scen['cost_ratio']=max(scen['cost_ratio'],.05); scen['other_ratio']=max(scen['other_ratio'],.05); scen['capex']=max(scen['capex'],0.)
+    scen['wacc']=max(scen['wacc'],scen['terminal_growth']+.02)
+    w=z['rev']; side='bull' if w>=0 else 'bear'
+    c0=initial_capture(o); val=lambda n,k: (c0 if INPUTS[n][k] is None else INPUTS[n][k])
+    inp={k:val('base',k)+(val(side,k)-val('base',k))*abs(w) for k in BLEND_INPUTS}
+    return scen,inp
+
+def _rev_multiple(zr):
+    scen,inp=draw_blocks(zr=zr); r=forecast_joint(scenario_overrides=scen,input_overrides=inp)[0]
+    return r[4]['revenue']/r[0]['revenue']
+
+_REV_BOUNDS=None
+def revenue_bounds():
+    """Revenue factor at the 10th/90th percentile: model year-5/year-1 multiple
+    equals base x (q10/q50, q90/q50) of the >=$50B comparables' 4-year multiple."""
+    global _REV_BOUNDS
+    if _REV_BOUNDS is None:
+        from evaluation.margin_scale import load,target_d
+        q=target_d(load())['revenue_multiple']; m0=_rev_multiple(0.)
+        def solve(target,lo,hi):
+            for _ in range(30):
+                mid=(lo+hi)/2
+                if (_rev_multiple(mid)-target)*(_rev_multiple(lo)-target)>0: lo=mid
+                else: hi=mid
+            return (lo+hi)/2
+        _REV_BOUNDS=(solve(m0*q['q10']/q['q50'],-1.,0.),solve(m0*q['q90']/q['q50'],0.,1.))
+    return _REV_BOUNDS
+
+def _phi(x):
+    from math import erf,sqrt
+    return .5*(1+erf(x/sqrt(2)))
+
+def draw_costs(u_margin,u_wacc):
+    from evaluation.margin_scale import draw_costs as dc
+    return dc(u_margin,u_wacc)
+
+def copula_rho():
+    from evaluation.margin_scale import load,target_d
+    rs=target_d(load())['spearman_growth_margin']; return 2*np.sin(np.pi*rs/6)
+
+def block_factors(nr,nc,nw,zl):
+    lo,hi=revenue_bounds(); q=1.2815515655446004
+    zr=nr/q*(hi if nr>=0 else -lo)
+    return zr,nc/q,nw/0.6744897501960817,zl
+
+def simulate(name='base',n=256,seed=42,parameters=True,comonotone=False):
+    """Macro regime paths plus parameter uncertainty.
+
+    Default: block-wise draws (margin_scale addendum). Revenue factor calibrated to
+    comparables' 4-year revenue-multiple quantiles; steady margin, compute share
+    and WACC drawn from their empirical comparable distributions; Gaussian copula
+    between revenue and margin; lifecycle block keeps its triangular factor. comonotone=True
+    reproduces the former single-factor stress band; parameters=False is
+    macro-only.
     """
-    rng=np.random.default_rng(seed); equity=[]
+    rng=np.random.default_rng(seed); equity=[]; rho=copula_rho() if parameters and not comonotone else 0.
     for _ in range(n):
         path=[]; current=1
         for t in range(10):
             current=int(rng.choice(3,p=MACRO[current])); path.append(current)
-        if parameters:
+        if parameters and comonotone:
             z=float(rng.triangular(-1,0,1)); scen,inp=draw_parameters(z)
+            equity.append(forecast_joint(name,path,scenario_overrides=scen,input_overrides=inp)[2])
+        elif parameters:
+            nr,e2,nw=rng.standard_normal(3); nc=rho*nr+np.sqrt(1-rho**2)*e2
+            zr,_,_,zl=block_factors(nr,0.,0.,float(rng.triangular(-1,0,1)))
+            scen,inp=draw_blocks(zr=zr,zl=zl)
+            scen.update(draw_costs(_phi(nc),_phi(nw))); scen['wacc']=max(scen['wacc'],scen['terminal_growth']+.02)
             equity.append(forecast_joint(name,path,scenario_overrides=scen,input_overrides=inp)[2])
         else:
             equity.append(forecast_joint(name,path)[2])
     e=np.array(equity)
-    return dict(mean=float(e.mean()),p05=float(np.quantile(e,.05)),median=float(np.median(e)),p95=float(np.quantile(e,.95)),negative=float(np.mean(e<0)))
+    return dict(mean=float(e.mean()),p05=float(np.quantile(e,.05)),p10=float(np.quantile(e,.10)),median=float(np.median(e)),
+                p90=float(np.quantile(e,.90)),p95=float(np.quantile(e,.95)),negative=float(np.mean(e<0)))
 
 if __name__=='__main__':
     for n in INPUTS:
@@ -246,4 +319,6 @@ if __name__=='__main__':
     for k in ('health','duration','competition'):
         print('without',k,forecast_joint(**{k:False})[2])
     for k in range(3): print(REGIMES[k],forecast_joint(regime_path=[k]*10)[2])
+    print('revenue factor bounds',revenue_bounds(),'copula rho',copula_rho())
+    print('comonotone stress band',simulate(n=1024,comonotone=True))
     print(simulate(n=1024))

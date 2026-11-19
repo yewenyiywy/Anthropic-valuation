@@ -6,13 +6,13 @@ Snapshot 2026-11-19. USD billions unless noted. **Research model: the [release g
 
 ## Results
 
-**Conditional equity residual**: 1,024 joint draws of macro paths and scenario parameters (§1.5).
+**Conditional equity residual**: 1,024 joint draws of macro paths and block-wise parameters (§1.5). Bear / base / bull = P10 / P50 / P90.
 
-| Mean | Median | P5 | P95 | P(equity < 0) |
-|---:|---:|---:|---:|---:|
-| 490.02 | 385.76 | −71.66 | 1,475.20 | 13.2% |
+| Mean | P5 | **P10 (bear)** | **P50 (base)** | **P90 (bull)** | P95 | P(equity < 0) |
+|---:|---:|---:|---:|---:|---:|---:|
+| 501.67 | 20.55 | **72.13** | **401.43** | **1,043.01** | 1,345.69 | 3.3% |
 
-**Structural scenarios**, normal macro regime:
+**Structural corners** (stress test, not percentiles: every block at its bear or bull end at once), normal macro regime:
 
 | Scenario | Revenue y1 | y5 | y10 | EV | Equity |
 |---|---:|---:|---:|---:|---:|
@@ -252,10 +252,21 @@ Pro forma cash and the convertible carrying value are illustrative. The updated 
 ### 1.5 Uncertainty
 
 ```math
-Z_{t}\sim P_Z,\qquad z\sim\mathrm{Tri}(-1,0,1),\qquad \theta(z)=\theta_{\mathrm{base}}+|z|\,(\theta_{\mathrm{side}(z)}-\theta_{\mathrm{base}})
+Z_{t}\sim P_Z,\qquad (n_r,n_m)\sim\mathcal N\!\left(0,\begin{pmatrix}1&\rho\\\rho&1\end{pmatrix}\right),\qquad n_w\sim\mathcal N(0,1),\qquad z_\ell\sim\mathrm{Tri}(-1,0,1)
 ```
 
-One common factor moves every scenario parameter together toward bear ($z<0$) or bull ($z>0$). This is a wide comonotone stress band, not an estimated posterior. Macro paths alone give mean 199.72 and P5–P95 of 109.24–262.33.
+```math
+z_r=\frac{n_r}{1.2816}\,\bar z_{\mathrm{side}},\qquad m^\ast=\hat F^{-1}_{m}\big(\Phi(n_m)\big),\qquad W=\hat F^{-1}_{W}\big(\Phi(n_w)\big)
+```
+
+| Symbol | Meaning |
+|---|---|
+| $z_r$ | revenue-block factor (customer-state parameters, blended inputs); $\bar z$ = −0.312 / +0.630 puts the year-5/year-1 revenue multiple at base × q10/q50 and base × q90/q50 of ≥$50B comparables' 4-year multiples (1.28 / 1.80 / 2.38) |
+| $\hat F^{-1}_{m}$, $\hat F^{-1}_{W}$ | empirical quantile functions of comparable steady margins and peer-beta WACCs (§3.8); compute share at $1-\Phi(n_m)$ |
+| $\rho$ | 0.334, Gaussian-copula equivalent of the panel Spearman 0.32 between 4-year revenue growth and margin change |
+| $z_\ell$ | lifecycle block (terminal growth, exit, decline, renewal), still hand-set |
+
+Macro paths alone give mean 402.88, P5–P95 242.27–519.67. The former single common factor (`simulate(comonotone=True)`) gives P90 1,177.01 and P95 1,475.20.
 
 ## 2. Scenario parameters (assumptions)
 
@@ -396,13 +407,17 @@ No ML model beats the linear baseline, so none is promoted. The fitted adjustmen
 | Previous costs, estimated WACC | 421.1 |
 | Both estimated | 494.63 |
 
-Still hand-set: customer-state parameters, capex ratio, terminal growth, ceilings.
+**Why bull was too high, and the fix** ([addendum](evaluation/margin_scale_preregistration.md)): the old bull moved every block to its extreme at once. Each block alone at its P90, from base 494.63: revenue 904.6, margin 755.4, WACC 643.7, lifecycle 608.3; all together 2,905. Drawing blocks separately from data gives P90 1,043.01.
+
+The base revenue path is still optimistic against comparables: its year-5/year-1 multiple 2.21 is above the ≥$50B median 1.80. Re-centering revenue on that median gives base equity 293.1 (not adopted; recentering was not preregistered).
+
+Still hand-set: customer-state parameters (centre), capex ratio, terminal growth, ceilings.
 
 ## 4. Reproduce
 
 ```bash
 pip install numpy scipy
-python -m unittest discover -s evaluation -p 'test_*.py'   # 134 tests
+python -m unittest discover -s evaluation -p 'test_*.py'   # 136 tests
 python -m evaluation.validation_gate --audit
 python -m models.joint_customer_states
 python -m evaluation.reverse_dcf --equity 1200

@@ -137,6 +137,45 @@ def target_c():
                 wacc_erp_low=wacc(q['p50'], mk['implied_erp_low']), wacc_erp_high=wacc(q['p50'], mk['implied_erp_high']))
 
 
+def target_d(rows, h=4, scale=50., corr_floor=1.):
+    """Revenue dispersion at scale and revenue-margin dependence (addendum)."""
+    mult = [s[i + h][1] / s[i][1] for s in rows.values() for i in range(len(s) - h) if s[i][1] >= scale]
+    q = {k: float(np.quantile(mult, p)) for k, p in (('q10', .1), ('q50', .5), ('q90', .9))}
+    g, dm = [], []
+    for s in rows.values():
+        for i in range(len(s) - h):
+            if s[i][1] < corr_floor: continue
+            g.append(s[i + h][1] / s[i][1]); dm.append(s[i + h][2] / s[i + h][1] - s[i][2] / s[i][1])
+    rk = lambda a: np.argsort(np.argsort(a))
+    rho = float(np.corrcoef(rk(np.array(g)), rk(np.array(dm)))[0, 1])
+    return dict(n_scale=len(mult), revenue_multiple=q, n_corr=len(g), spearman_growth_margin=rho)
+
+
+_Q = None
+def empirical():
+    """Cached empirical quantile functions for Monte Carlo draws (Target B/C)."""
+    global _Q
+    if _Q is None:
+        rows = load(); b = target_b(rows); c = target_c()
+        mk = {r['item']: float(r['value']) for r in csv.DictReader(open(ROOT / 'data' / 'wacc_market.csv'))}
+        t = mk['tax_rate']; de = c['de']; we = 1 / (1 + de); kd = (mk['risk_free_10y'] + .01) * (1 - t)
+        w = sorted(we * (mk['risk_free_10y'] + bu * (1 + (1 - t) * de) * mk['implied_erp']) + (1 - we) * kd
+                   for bu in c['unlevered_betas'])
+        _Q = dict(m=np.array(b['m_star_values']), share=np.array(sorted(b['compute_share']['values'])), wacc=np.array(w))
+    return _Q
+
+
+def quantile(values, u):
+    """Linear interpolation between order statistics (Hazen positions)."""
+    n = len(values); pos = (np.arange(n) + .5) / n
+    return float(np.interp(u, pos, values))
+
+
+def draw_costs(u_margin, u_wacc):
+    q = empirical(); m = quantile(q['m'], u_margin); s = quantile(q['share'], 1 - u_margin)
+    return dict(cost_ratio=(1 - m) * s, other_ratio=(1 - m) * (1 - s), wacc=quantile(q['wacc'], u_wacc))
+
+
 def estimates():
     rows = load(); b = target_b(rows); c = target_c()
     out = {}
@@ -151,7 +190,7 @@ def estimates():
 def run():
     rows = load()
     return dict(status='development/diagnostic; labels were public before registration',
-                target_a=target_a(rows), target_b=target_b(rows), target_c=target_c(), scenario_estimates=estimates())
+                target_a=target_a(rows), target_b=target_b(rows), target_c=target_c(), target_d=target_d(rows), scenario_estimates=estimates())
 
 
 if __name__ == '__main__':
