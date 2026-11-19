@@ -530,6 +530,24 @@ Ridge extensions use initial growth (neutralized for partial-year observations),
 
 Model selection on these same eight endpoints is exploratory; another cohort is required for an unbiased performance estimate. The pooled recovery model is not a company-specific lifecycle calibration and the blend is not a validated valuation model. Do not transplant its coefficients into Anthropic; separately estimate industry adoption, market share, monetization and margins from company-specific evidence.
 
+#### Company fundamentals and six-year validation
+
+[Company fundamentals and FY2005 outcomes](data/dotcom_fundamentals.csv) add nine sourced FY1999 gross margins, eight FY2005 revenues, and an explicitly missing Excite margin (training-fold median only). Some FY1999 accounting inputs are retrospective; ICG's FY2005 continuing-operation scope differs. No target issuer outcome, FY2004 or FY2005 outcome enters fitting. In each fold, the recovery regression adds log FY1999 revenue and/or gross margin to the sustained growth term. The size blend is a geometric average of the size forecast and the prior saturation/recovery blend.
+
+| Candidate | FY2004 MAPE | FY2005 MAPE | FY2004 WAPE | FY2005 WAPE |
+|---|---:|---:|---:|---:|
+| Fixed fade | 1106.82% | 1413.94% | 230.14% | 286.64% |
+| Flat | 73.03% | 76.05% | 61.19% | 67.81% |
+| Saturation | 76.48% | 82.39% | 41.08% | 51.12% |
+| Recovery | 54.85% | 59.36% | 78.74% | 72.98% |
+| Gross margin | 55.29% | 60.39% | 89.16% | 83.43% |
+| Size | 73.09% | 97.83% | 21.66% | 39.01% |
+| Margin and size | 72.95% | 95.18% | 26.87% | 34.27% |
+| Saturation/recovery blend | 59.69% | 63.89% | 39.72% | 39.22% |
+| Size blend | 62.04% | 71.47% | 29.98% | 31.82% |
+
+This new terminal year tests horizon robustness, not an independent issuer cohort. Gross margin does not consistently improve revenue predictions and should instead be tested in the cash-flow layer. Size improves dollar-weighted error but does not reliably improve relative error. No fitted Anthropic valuation change is justified. [Reproduction](evaluation/fundamental_growth.py).
+
 ### 8.3 Anthropic-specific filing calibration and accounting sensitivity
 
 The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
@@ -565,13 +583,14 @@ These are mean equity residuals ($B), not validated fair-value estimates. Expens
 
 ## 9. Reproduction and data
 
-40 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+42 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
 python -m evaluation.company_oos
 python -m evaluation.five_year
 python -m evaluation.growth_comparison
+python -m evaluation.fundamental_growth
 python -m unittest discover -s evaluation -v
 ```
 
