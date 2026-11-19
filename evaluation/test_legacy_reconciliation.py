@@ -3,7 +3,7 @@ from pathlib import Path
 
 D = Path(__file__).resolve().parents[1] / 'data'
 OK = {'matched', 'matched_targeted', 'matched_derived', 'matched_replacement_doc', 'matched_second_doc',
-      'matched_second_source', 'corrected', 'corrected_precision', 'redefined', 'not_reproducible', 'pending'}
+      'matched_second_source', 'corrected', 'corrected_precision', 'redefined', 'not_reproducible', 'pending', 'partial'}
 
 
 def rows():
