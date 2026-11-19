@@ -95,28 +95,51 @@ def propagate(x,K,vs):
     x=np.einsum('idqv,ivw->idqw',x,vs)
     return (x.reshape(72,7).T@K).T.reshape(8,3,3,7)
 
-def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None):
+def forecast_joint(name='base',regime_path=None,health=True,duration=True,competition=True,o=None,scenario_overrides=None,profile=None):
+    if profile is not None and (o is None or scenario_overrides is not None):
+        raise ValueError('company profile requires explicit company observations and scenario')
     o=observations() if o is None else o; p=dict(SCENARIOS[name]); a=INPUTS[name]; b=PARAM[name]
     path=[1]*10 if regime_path is None else list(regime_path)
     if len(path)!=10 or any(k not in (0,1,2) for k in path): raise ValueError('need ten macro states')
     p['exit']=dict(bear=annual_probability(LARGE_DELIST_5Y,5),base=hazards()[-1],bull=LARGE_US_FAILURE)[name]
-    w=spread(a['weights']); r=customer_retention(name)
-    api=o['run_rate']*o['consumption_9m26']/o['revenue_9m26']; sub=o['run_rate']-api; personal0=sub*p['personal']; personal_raw=personal0
-    init=lambda v:initial_tensor(v,competition,health)
+    if scenario_overrides:
+        if set(scenario_overrides)-set(p): raise ValueError('unknown scenario parameter')
+        p.update(scenario_overrides)
+    if profile is not None:
+        # No Anthropic defaults for a foreign company. An explicitly incomplete
+        # profile must fail rather than silently borrow Claude's parameters.
+        required={'scenario','inputs','birth_share','weights','retention','start','initialize','kernel','vendor','birth_budget','enterprise_cap','personal_cap','reward','macro_growth','health_spend','tail','commitment_floor'}
+        if set(profile)!=required or set(profile['scenario'])!=set(p) or set(profile['inputs'])!=set(a):
+            raise ValueError('incomplete company profile; no cross-company default allowed')
+        p=dict(profile['scenario']); a=dict(profile['inputs']); b={'birth_share':profile['birth_share']}
+        w=profile['weights']; r=profile['retention']; api,sub,personal0=profile['start']; init=profile['initialize']
+        if len(w)!=8 or len(r)!=4 or not np.isclose(sum(w),1) or not 0<=personal0<=sub or min(api,sub)<0:
+            raise ValueError('invalid company initial state')
+        if not np.isclose(api+sub,o['run_rate']): raise ValueError('company revenue reconciliation')
+    else:
+        w=spread(a['weights']); r=customer_retention(name)
+        api=o['run_rate']*o['consumption_9m26']/o['revenue_9m26']; sub=o['run_rate']-api; personal0=sub*p['personal']
+        init=lambda v:initial_tensor(v,competition,health)
+    personal_raw=personal0
+    earn=reward if profile is None else profile['reward']
+    growth=MACRO_GROW if profile is None else profile['macro_growth']
     trial=init([api*v*p['trial'] for v in w]); live=init([api*v*(1-p['trial']) for v in w]); seats=init([(sub-personal0)*v for v in w])
-    initial=(api+reward(seats))/MENLO_DEPLOYMENT; pc=benchmark(a['personal_ratio'])['annual_revenue']; rows=[]
+    initial=(api+earn(seats))/MENLO_DEPLOYMENT if profile is None else None
+    pc=benchmark(a['personal_ratio'])['annual_revenue'] if profile is None else profile['personal_cap']; rows=[]
     cache={}
     for t,reg in enumerate(path,1):
         fade=max(0,1-(t-1)/7); mult=(1-(1-p['price'])*fade)*(1+(p['volume']-1)*fade)
-        if reg not in cache: cache[reg]=(lifecycle_kernel(name,reg,health,duration),np.array([vendor_matrix(name,g,reg,competition) for g in GROUP]))
-        K,vs=cache[reg]; pa=reward(trial)+reward(live); ps=reward(seats)
-        loss=lambda x:sum(reward(x[i])*(1-r[GROUP[i]]) for i in range(8))
-        new_api=(pa*p['new']*fade+loss(trial+live)*a['replacement']*(1-fade))*MACRO_GROW[reg]
-        new_seat=(ps*p['new']*fade+loss(seats)*a['replacement']*(1-fade))*MACRO_GROW[reg]
-        _,budget=seed_birth(name,t,MACRO_GROW[reg]); birth=min(new_api*b['birth_share'],budget); new_api*=1-b['birth_share']
+        if reg not in cache:
+            cache[reg]=(lifecycle_kernel(name,reg,health,duration),np.array([vendor_matrix(name,g,reg,competition) for g in GROUP])) if profile is None else (profile['kernel'](reg),profile['vendor'](reg))
+        K,vs=cache[reg]; pa=earn(trial)+earn(live); ps=earn(seats)
+        loss=lambda x:sum(earn(x[i])*(1-r[GROUP[i]]) for i in range(8))
+        new_api=(pa*p['new']*fade+loss(trial+live)*a['replacement']*(1-fade))*growth[reg]
+        new_seat=(ps*p['new']*fade+loss(seats)*a['replacement']*(1-fade))*growth[reg]
+        budget=seed_birth(name,t,MACRO_GROW[reg])[1] if profile is None else profile['birth_budget'](t,reg)
+        birth=min(new_api*b['birth_share'],budget); new_api*=1-b['birth_share']
         pilot=.1+.5*fade
         funding=np.array([1+(p['funding']-1)*fade if g<2 else 1 for g in GROUP])[:,None,None,None]
-        spend=HEALTH_SPEND[None,None,:,None] if health else 1.
+        spend=(HEALTH_SPEND[None,None,:,None] if health else 1.) if profile is None else profile['health_spend']
         live=propagate((live+trial*p['conversion']*p['rollout'])*funding*mult*spend,K,vs)
         seats=propagate(seats*funding*(1+p['subscription_growth']*fade)*spend,K,vs)
         add=np.array(w)*new_api; add[0]+=birth
@@ -125,14 +148,14 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
         employer=p['employer0']+(p['employer_end']-p['employer0'])*min(t/10,1)
         overlap=overlap_factor(employer,p['cannibal'])/overlap_factor(p['employer0'],p['cannibal'])
         personal=min(personal_raw*overlap,pc+max(0,personal0-pc)*max(0,1-t/5)); personal_raw=personal/overlap
-        ent=reward(live+trial+seats); cap=enterprise_cap(t,a['growth'],a['capture'],initial)
+        ent=earn(live+trial+seats); cap=enterprise_cap(t,a['growth'],a['capture'],initial) if profile is None else profile['enterprise_cap'](t)
         scale=min(1,cap/ent) if ent else 1
         # Proportional scaling applies to retained opportunity mass too.
         live*=scale; trial*=scale; seats*=scale
-        revenue=reward(live+trial+seats)+personal; compute=max(commitment_floor(t,o),revenue*p['cost_ratio'])
+        revenue=earn(live+trial+seats)+personal; compute=max(commitment_floor(t,o) if profile is None else profile['commitment_floor'](t),revenue*p['cost_ratio'])
         pretax=revenue-compute-revenue*(p['other_ratio']+p['capex']); fcf=pretax-.25*max(0,pretax)
         rows.append(dict(year=t,revenue=revenue,fcf=fcf,regime=reg,vendor_mass=(live+trial+seats).sum(axis=(0,1,2)).tolist()))
-    tail,_=lifecycle_tail(rows[-1]['revenue'],p,o)
+    tail,_=lifecycle_tail(rows[-1]['revenue'],p,o) if profile is None else profile['tail'](rows[-1]['revenue'],p,o)
     ev=sum(x['fcf']/(1+p['wacc'])**x['year'] for x in rows)+tail
     return rows,ev,ev+o['proforma_cash']-o['proforma_convertibles']
 
