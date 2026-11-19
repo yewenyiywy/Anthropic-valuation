@@ -91,13 +91,14 @@ def lifecycle_tail(revenue, p, o, start=10, horizon=30):
         tail.append(dict(year=t,revenue=expected_rev,fcf=fcf,alive=1-prob[3]))
     return pv,tail
 
-def forecast(p, o=None, years=10):
+def forecast(p, o=None, years=10, personal_ceiling=None):
     o = observations() if o is None else o
     # October run rate is a starting intensity; segment split is September historical proxy.
     api = o["run_rate"] * o["consumption_9m26"] / o["revenue_9m26"]
     sub = o["run_rate"] - api
     startup, trial = api*p["startup"], api*p["trial"]
     personal=sub*p['personal']; enterprise_sub=sub-personal
+    sub_start_personal=personal
     personal_raw=personal
     mature = api-startup-trial
     rows = []
@@ -119,6 +120,11 @@ def forecast(p, o=None, years=10):
         personal_raw *= 1+p['subscription_growth']*fade
         employer=p['employer0']+(p['employer_end']-p['employer0'])*min(t/10,1)
         personal=personal_raw*overlap_factor(employer,p['cannibal'])/overlap_factor(p['employer0'],p['cannibal'])
+        if personal_ceiling is not None:
+            # Stress only: converge to the benchmark by year 5; do not rewrite the observed baseline.
+            cap = personal_ceiling + max(0, sub_start_personal-personal_ceiling)*max(0,1-t/5)
+            personal = min(personal, cap)
+            personal_raw = personal * overlap_factor(p['employer0'],p['cannibal'])/overlap_factor(employer,p['cannibal'])
         enterprise_sub *= 1+p['subscription_growth']*fade
         sub=personal+enterprise_sub
         # Conditional revenue ceiling, gradually reaching the assumed ceiling by year 10.
