@@ -20,7 +20,7 @@ def converge_target(company):
     fam=company.lower()
     return fit([x for x in panel() if x['family']!=fam],'cfo',3.)['mstar']
 
-def predict_value(r, train, theta, wacc=.12, retention=0, mature_margin='converge'):
+def predict_value(r, train, theta, wacc=.12, retention=0, mature_margin='converge', horizon=5):
     q=dict(company=r['company'],r1998=r['r2019'],r1999=r['r2020'])
     r0=float(r['r2020'])
     r5=float(forecast(train,q,theta)['size_blend'])
@@ -49,8 +49,13 @@ def predict_value(r, train, theta, wacc=.12, retention=0, mature_margin='converg
     net=float(r['cash20'])-float(r['debt20'])
     v0=sum(fcf[t]/(1+wacc)**t for t in range(1,11))+tail+net
     # Revalue only future cash flows at t=5; past cash flow is not counted twice.
-    v5=sum(fcf[t]/(1+wacc)**(t-5) for t in range(6,11))+tail*(1+wacc)**5+net+retention*sum(fcf[1:6])
-    return dict(value0=max(0,float(v0)),dcf=max(0,float(v5)),
+    # Equity value at year k (k=5 is the five-year endpoint). Other k support the
+    # acquisition endpoint policy (evaluation/acquisition_endpoint_policy.md):
+    # an issuer acquired at year tau is compared at k=round(tau), min 1.
+    if not 1<=horizon<=10: raise ValueError('horizon must be 1..10 years')
+    k=int(horizon)
+    v5=sum(fcf[t]/(1+wacc)**(t-k) for t in range(k+1,11))+tail*(1+wacc)**k+net+retention*sum(fcf[1:k+1])
+    return dict(value0=max(0,float(v0)),dcf=max(0,float(v5)),horizon=k,
                 flat_cap=float(r['cap20']),
                 constant_ps=float(r['cap20'])*r5/r0,
                 revenue5=r5,margin0=m0,fcf5=float(fcf[5]))

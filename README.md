@@ -8,7 +8,7 @@ Research snapshot: 2026-11-19. All amounts are USD billions unless noted.
 
 ## 1. Conclusion
 
-**Engine revision 2026-11-19:** tail drift, truncation, tail margins, limited liability, hidden base share loss, backtest parameter mismatch and the instantaneous cost jump fixed; see [Engine revision](#engine-revision-2026-11-19-what-changed-and-why). 111 local tests pass; gate still BLOCKED.
+**Engine revision 2026-11-19:** tail drift, truncation, tail margins, limited liability, hidden base share loss, backtest parameter mismatch and the instantaneous cost jump fixed; see [Engine revision](#engine-revision-2026-11-19-what-changed-and-why). 118 local tests pass; gate still BLOCKED.
 
 **Stage-four handoff:** 17 candidate issuer families, 20 vintage SEC customer observations across nine companies, zero validated complete profiles. The accounting bridge is opt-in and untrained. Independent five-year equity WAPE remains unavailable; no release gate has passed. See [preregistration and next steps](evaluation/stage4_preregistration.md). Local suite: 94 tests passed.
 
@@ -39,7 +39,7 @@ Negative residuals denote funding distress, not negative share prices. P5/P95 no
 
 Chronological issuer-family train/validation/test separation, five-year label-availability embargo, preregistered thresholds, frozen code/parameters/predictions and independent review are required. Revealed cohorts are development diagnostics only. Primary target is five-year equity market capitalization; revenue and cash flow are auxiliary. Project-specific gate: at least ten distinct issuer families across two technology cycles, WAPE <=30%, absolute signed bias <=15%, strictly beat flat capitalization and constant P/S. Machine checks are necessary but not proof of independent custody or source authenticity.
 
-Run `python -m evaluation.validation_gate --audit`; release candidate requires `python -m evaluation.validation_gate --manifest evaluation/release_manifest.json`. 111 local unit tests passed. Current historical diagnostic equity WAPE is 86.07%; complete company profiles, equity-loss training and blind final test are missing.
+Run `python -m evaluation.validation_gate --audit`; release candidate requires `python -m evaluation.validation_gate --manifest evaluation/release_manifest.json`. 118 local unit tests passed. Current historical diagnostic equity WAPE is 86.07%; complete company profiles, equity-loss training and blind final test are missing.
 
 ### Engine revision (2026-11-19): what changed and why
 
@@ -85,6 +85,23 @@ Five-year FCF margin, (CFO − capex − capitalized software) / revenue, was te
 **Result: not promoted.** The preregistered pick beat `hold` by far but not `pooled`, overall or in cloud2020. `converge` was best ex post but cannot be promoted after the fact. Margins mean-revert into roughly 15–40% within six years whatever the start (−29% to +18%). Holding the origin margin underpredicted by 23 points. The roster is now retired to development. The modeler was not blind to these companies' history, and labels were not independently held.
 
 **Development estimate (18 observations, 16 families; `python -m evaluation.margin_development`).** Family-LOO MAE: hold 18.07 / pooled 8.93 / converge-3y 7.70 / converge-fitted 6.20 pp for CFO-based margins, and 16.56 / 10.28 / 7.26 / 5.40 for SBC-adjusted margins. With a 5–6 year horizon, the long-run level and the half-life are not separately identified: a fitted half-life runs to the 6-year grid edge. The engine therefore uses a fixed 3-year half-life (m* = 32.8% CFO-based, 18.1% SBC-adjusted). **SBC-adjusted margins** five to six years out have median 11.1%, mean 10.5%, s.d. 12.5 pp, P10 −9.3% and P90 24.4%. Much of the apparent CFO-margin expansion is stock compensation: Zscaler shows 27.2% before SBC and 2.4% after. Converging Anthropic's reported SBC-adjusted 7.2% toward 18.1% gives about 17% by year 10, consistent with the base steady state of 15.75%. The near-term cost path was adjusted accordingly (revision item 7).
+
+### Revenue-growth persistence (development)
+
+`python -m evaluation.growth_persistence` uses the same 18 observations. All are exposed, because target-year revenue was collected with the margin labels. The model decays log growth geometrically from g0 = ln(R0/R−1). Fitted half-life is 4 years, long-run growth 6.5%. Family-LOO error in five-to-six-year log revenue:
+
+| Model | LOO MAE (log) | ≈ % |
+|---|---:|---:|
+| flat | 1.436 | 320% |
+| hold starting growth | 0.660 | 94% |
+| engine-style linear 7-year fade from g0 | 0.242 | 27% |
+| fitted decay | 0.221 | 25% |
+
+The engine's fade *shape* is about as good as the fitted decay. What drives the Anthropic result is the *starting point*. The engine's base path from the 81B run rate is equivalent to a SaaS issuer with g0 ≈ 0.24–0.29, roughly the 17th–33rd percentile of the panel and similar to Adobe or Salesforce in 2020. Anthropic's observed g0 is ln(33.2/2.5) ≈ 2.57 over nine months, far above the panel maximum of 0.63 (Zoom, 2020). The panel therefore cannot say whether the engine's deceleration is too fast; extrapolating it would be meaningless. At such rates the binding economic constraint is the industry-spend ceiling, which is where the engine puts it. No default was changed. Reported revenue includes acquisitions, so persistence is an upper bound for organic growth.
+
+### Exits and the acquisition endpoint (development; policy proposed)
+
+`python -m evaluation.saas_exit` covers every member of both cloud rosters, 24 issuers with no survivor selection. Over five years: cloud2015 had 5 acquired out of 10 (about 12%/yr), cloud2020 had 1 out of 14 (about 2%/yr); pooled 6 of 24, Dirichlet(0.5) posterior 25.5% acquired, 90% interval 12.7–40.5%. There were no bankruptcies, against 2 of 18 in the dot-com cohort. All six deals were at 1.0–2.2x the May-2015 market cap where available ([events](data/stage4_exit_events.csv)). The acquired issuers were small ($3–26B). For an issuer of Anthropic's size, acquisition is not a plausible exit, so only distress exits belong in the zero-recovery hazard. The base case already does this; the bear case's zero-recovery all-cause delisting is a deliberate stress that this evidence does not support. A horizon-matched [acquisition endpoint policy](evaluation/acquisition_endpoint_policy.md) is **proposed, not approved**: label = equity value paid at close, prediction = model equity at the matched horizon (`predict_value(..., horizon=k)`), never zero. The gate remains BLOCKED until the owner approves it.
 
 ## 2. Overarching valuation model
 
@@ -865,7 +882,7 @@ These are mean equity residuals ($B), not validated fair-value estimates. Expens
 
 ## 9. Reproduction and data
 
-111 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+118 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
 
 ```bash
 python -m models.joint_customer_states
@@ -874,6 +891,8 @@ python -m evaluation.five_year
 python -m evaluation.reverse_dcf --equity 1200
 python -m evaluation.margin_path --verify
 python -m evaluation.margin_development
+python -m evaluation.growth_persistence
+python -m evaluation.saas_exit
 python -m evaluation.growth_comparison
 python -m evaluation.fundamental_growth
 python -m evaluation.external_validation
