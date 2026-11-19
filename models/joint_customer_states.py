@@ -151,4 +151,4 @@ if __name__=='__main__':
     for k in ('health','duration','competition'):
         print('without',k,forecast_joint(**{k:False})[2])
     for k in range(3): print(REGIMES[k],forecast_joint(regime_path=[k]*10)[2])
-    print(simulate())
+    print(simulate(n=1024))
