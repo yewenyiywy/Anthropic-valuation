@@ -44,6 +44,7 @@ def enterprise_cap(t, growth_multiplier, terminal_capture, initial_capture):
     return sum(sector_budget(t,growth_multiplier).values())*capture
 
 def run():
+    from .valuation import EXIT_HAZARD
     o=observations()
     baseline=o['run_rate']*(1-(1-o['consumption_9m26']/o['revenue_9m26'])*.5)
     initial=baseline/MENLO_DEPLOYMENT
@@ -51,7 +52,7 @@ def run():
     # rate is an explicitly cross-sample proxy, not a fitted company hazard.
     proxy=annual_probability(LARGE_DELIST_5Y,5)*DISTRESS_EXIT_FRACTION
     for name,mult,capture,exit_p,ratio in zip(SCENARIOS,(.7,1,1.5),(.15,None,.50),  # base holds observed capture
-            (annual_probability(LARGE_DELIST_5Y,5),proxy,LARGE_US_FAILURE),(.05,.15,.30)):
+            (EXIT_HAZARD['bear'],proxy,LARGE_US_FAILURE),(.05,.15,.30)):
         p=dict(SCENARIOS[name],exit=exit_p)
         cap=lambda t: enterprise_cap(t,mult,capture,initial)
         rows,ev,equity=forecast(p,personal_ceiling=benchmark(ratio)['annual_revenue'],enterprise_ceiling=cap)

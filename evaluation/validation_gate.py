@@ -15,6 +15,13 @@ COMPONENTS = frozenset(('revenue','customer_states','retention','acquisition',
     'vendor_switching','price_volume','demand_ceiling','operating_costs','tax',
     'depreciation','capex','working_capital','sbc','cash','debt','leases',
     'commitments','wacc','issuer_lifecycle'))
+# Approved acquisition endpoint policy (evaluation/acquisition_endpoint_policy.md).
+EVENT_VALUE_BASES = frozenset(('per_share_x_diluted','equity_headline','ev_converted'))
+
+def event_horizon(origin, event_date):
+    """Matched prediction horizon in whole years for an event endpoint (min 1)."""
+    return max(1, round((event_date-origin).days/365.25))
+
 ARTIFACTS = frozenset(('preregistration','provenance','splits','predictions',
     'labels','parameters','training_log','review','freeze_attestation','engine',
     'model_contract','execution_trace'))
@@ -160,13 +167,25 @@ def check(manifest, root=ROOT):
         require(len(labels)==len(expected) and {r['sample_id'] for r in labels}==expected,'label coverage mismatch')
         if errors: return dict(status='BLOCKED',errors=errors)
         ymap={r['sample_id']:r for r in labels}
-        y=[]; p=[]; flat=[]; ps=[]
+        y=[]; p=[]; flat=[]; ps=[]; kinds=[]
         for r in preds:
             sid=r['sample_id']; z=ymap[sid]; origin=byid[sid]
             require(z['target_date']==origin['target_date'],'label date mismatch')
             require(z['source'].startswith('https://'),'missing market cap source')
             actual=num(z['equity_market_cap_usd_b']); prediction=num(r['equity_market_cap_usd_b'])
             require(z['outcome'] in ('listed','wipeout','acquired_documented'),'unresolved exit')
+            if z['outcome']=='acquired_documented':
+                # Label = equity value paid at close; prediction = model equity at the
+                # matched horizon. Never zero, never dropped.
+                if not z.get('event_date'): raise ValueError('acquisition without event_date: '+sid)
+                ed=day(z['event_date'])
+                require(day(origin['origin'])<ed<=day(origin['target_date']),'acquisition outside window: '+sid)
+                require(z.get('value_basis') in EVENT_VALUE_BASES,'unknown acquisition value basis: '+sid)
+                require(int(r.get('horizon_years') or 0)==event_horizon(day(origin['origin']),ed),'acquisition horizon mismatch: '+sid)
+                require(actual>0,'acquisition label must be positive: '+sid)
+            else:
+                require(int(r.get('horizon_years') or 5)==5,'standalone horizon must be five years: '+sid)
+            kinds.append('event' if z['outcome']=='acquired_documented' else 'standalone')
             require(actual>0 or z['outcome']=='wipeout','zero not documented wipeout')
             require(z['outcome']!='wipeout' or actual==0,'wipeout label nonzero')
             y.append(actual);p.append(prediction)
@@ -174,6 +193,9 @@ def check(manifest, root=ROOT):
             if rev<=0: raise ValueError('constant P/S baseline undefined')
             flat.append(base);ps.append(base*num(r['revenue5'])/rev)
         report={'equity':score(p,y),'flat':score(flat,y),'constant_ps':score(ps,y),'n':len(y)}
+        for k in ('standalone','event'):
+            idx=[i for i,x in enumerate(kinds) if x==k]
+            report[k]=dict(n=len(idx),**(score([p[i] for i in idx],[y[i] for i in idx]) if idx and sum(y[i] for i in idx)>0 else {}))
         sc=report['equity']
         require(sc['wape']<=MAX_WAPE,'equity WAPE threshold failed')
         require(abs(sc['bias'])<=MAX_BIAS,'equity bias threshold failed')

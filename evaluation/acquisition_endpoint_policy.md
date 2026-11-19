@@ -1,6 +1,6 @@
-# Acquisition endpoint policy for equity backtests — PROPOSED
+# Acquisition endpoint policy for equity backtests — APPROVED
 
-Status: proposed on 2026-11-19 and **not yet approved**. The protocol says the release gate stays blocked "pending an independently approved endpoint policy" whenever the five-year market cap cannot be observed. This document is that proposal. Approving it is the repository owner's decision. It has not been used to score anything.
+Status: **approved by the repository owner on 2026-11-19**. It is enforced in `evaluation/validation_gate.py` (`acquired_documented` labels need `event_date`, `value_basis`, a source and a matched `horizon_years`). Approval fixes the endpoint rule only; it does not lift any other gate blocker, and no cohort has been scored with it.
 
 ## Problem
 

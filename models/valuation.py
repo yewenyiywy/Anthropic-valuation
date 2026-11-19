@@ -49,12 +49,15 @@ SCENARIOS = {
 
 # Illustrative effective demand ceilings (not observed TAM), subscription overlap,
 # and corporate lifecycle transition probabilities. No empirical calibration implied.
-# Exit hazards are the SAME annual values the joint production model uses, so the
-# reduced models, the historical backtests and the Anthropic run share one tail:
-# bear = all-cause BCG large-firm delisting (8%/5y), base = that rate times the
-# Daepp distress share (4.5%+3.5%), bull = historical large-US failure 0.09%/yr.
+# Exit = zero-recovery DISTRESS exit only (acquisitions pay shareholders; see
+# evaluation/saas_exit.py). Same annual values in every model and backtest:
+#   hazard = BCG large-firm all-cause delisting (8%/5y) x distress share
+#   base: Daepp et al. distress share 4.5%+3.5% = 8%
+#   bear: dot-com distress share = bankruptcies / exits in data/dotcom_exit_events.csv (2/4 = 50%)
+#   bull: historical large-US outright failure 0.09%/yr
 LARGE_DELIST_ANNUAL = 1-(1-.08)**(1/5)
-EXIT_HAZARD = dict(bear=LARGE_DELIST_ANNUAL, base=LARGE_DELIST_ANNUAL*(.045+.035), bull=.0009)
+DOTCOM_DISTRESS_SHARE = .5
+EXIT_HAZARD = dict(bear=LARGE_DELIST_ANNUAL*DOTCOM_DISTRESS_SHARE, base=LARGE_DELIST_ANNUAL*(.045+.035), bull=.0009)
 for name, extra in {
     'bear': dict(ceiling=2, personal=.5, employer0=.4, employer_end=.8, cannibal=.8, exit=EXIT_HAZARD['bear'], decline=.30, renew=.03),
     'base': dict(ceiling=4, personal=.5, employer0=.4, employer_end=.7, cannibal=.5, exit=EXIT_HAZARD['base'], decline=.20, renew=.08),

@@ -22,6 +22,13 @@ class EngineRevision(unittest.TestCase):
         self.assertLess(lifecycle_tail(1.,p,Z)[0],0)
     def test_shared_exit_hazards(self):
         for n in ('bear','base','bull'): self.assertEqual(SCENARIOS[n]['exit'],EXIT_HAZARD[n])
+    def test_exit_is_distress_only(self):
+        import csv
+        from models.valuation import ROOT, DOTCOM_DISTRESS_SHARE, LARGE_DELIST_ANNUAL
+        ev=[r['event'] for r in csv.DictReader(open(ROOT/'data/dotcom_exit_events.csv'))]
+        self.assertAlmostEqual(DOTCOM_DISTRESS_SHARE,ev.count('bankruptcy')/len(ev))
+        self.assertAlmostEqual(EXIT_HAZARD['bear'],LARGE_DELIST_ANNUAL*DOTCOM_DISTRESS_SHARE)
+        self.assertTrue(EXIT_HAZARD['bull']<EXIT_HAZARD['base']<EXIT_HAZARD['bear']<LARGE_DELIST_ANNUAL)
     def test_base_capture_held(self):
         self.assertIsNone(INPUTS['base']['capture'])
         self.assertAlmostEqual(draw_parameters(0.)[1]['capture'],initial_capture())

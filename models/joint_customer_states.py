@@ -105,7 +105,7 @@ def forecast_joint(name='base',regime_path=None,health=True,duration=True,compet
     o=observations() if o is None else o; p=dict(SCENARIOS[name]); a=INPUTS[name]; b=PARAM[name]
     path=[1]*10 if regime_path is None else list(regime_path)
     if len(path)!=10 or any(k not in (0,1,2) for k in path): raise ValueError('need ten macro states')
-    p['exit']=dict(bear=annual_probability(LARGE_DELIST_5Y,5),base=hazards()[-1],bull=LARGE_US_FAILURE)[name]
+    p['exit']=EXIT_HAZARD[name]
     if scenario_overrides:
         if set(scenario_overrides)-set(p): raise ValueError('unknown scenario parameter')
         p.update(scenario_overrides)

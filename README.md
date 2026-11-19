@@ -1,915 +1,381 @@
 # Anthropic Valuation — Joint-State Lifecycle DCF
 
-**Validation correction:** Earlier aggregate joint-engine and equity-loss scores are archived surrogate experiments, not production-model performance or calibration evidence. Full production-model historical accuracy remains unmeasured. Missing inputs must be reconstructed or validated via fold-fitted imputation without disabling core mechanisms. See the [mandatory protocol](MODEL_VALIDATION_PROTOCOL.md).
-
 **English** · [简体中文](README.zh-CN.md)
 
-Research snapshot: 2026-11-19. All amounts are USD billions unless noted.
+Snapshot 2026-11-19. USD billions unless noted. **Research model: the [release gate](MODEL_VALIDATION_PROTOCOL.md) is BLOCKED, so no number here is a validated valuation.**
 
-## 1. Conclusion
+## Results
 
-**Engine revision 2026-11-19:** tail drift, truncation, tail margins, limited liability, hidden base share loss, backtest parameter mismatch and the instantaneous cost jump fixed; see [Engine revision](#engine-revision-2026-11-19-what-changed-and-why). 118 local tests pass; gate still BLOCKED.
+**Conditional equity residual**: 1,024 joint draws of macro paths and scenario parameters (§1.5).
 
-**Stage-four handoff:** 17 candidate issuer families, 20 vintage SEC customer observations across nine companies, zero validated complete profiles. The accounting bridge is opt-in and untrained. Independent five-year equity WAPE remains unavailable; no release gate has passed. See [preregistration and next steps](evaluation/stage4_preregistration.md). Local suite: 94 tests passed.
+| Mean | Median | P5 | P95 | P(equity < 0) |
+|---:|---:|---:|---:|---:|
+| 252.85 | 184.49 | −103.42 | 904.48 | 25.6% |
 
-**Historical full-model readiness:** 14 origin-known customer anchors across five cloud issuers; 0/5 profiles qualify for full-model equity scoring. The unchanged-market-cap reference WAPE is 58.82%; production equity WAPE is unavailable, not zero. The account stock-flow bounds cannot separate acquisition and retention. See `python -m evaluation.customer_identification` and [evidence](data/cloud_customer_vintage_evidence.csv).
+**Structural scenarios**, normal macro regime:
 
-**Equity-loss development training:** 60 structural trials and 11 premium-persistence trials on four 1999 issuers. Five-year equity WAPE on previously exposed cloud issuers: 88.48% baseline, 61.40% structural fit, 65.63% premium fit; unchanged initial market cap 58.82%. Revenue WAPE: 24.57%, 31.47%, 24.57%. No parameter promotion or blind-test claim. See [protocol](evaluation/equity_training_protocol.md) and run `python -m evaluation.equity_training`.
-
-**Conditional mean equity residual: $252.51B (0.253T); median $184.07B.** This is the average of 1,024 joint draws of macro paths *and* scenario parameters after the [engine revision](#engine-revision-2026-11-19-what-changed-and-why), not a fitted fair-value target. Reduced DCF equity WAPE is 70.98% (was 83.13%); direct aggregate joint-engine diagnostic is 86.07%. Full customer-level validation is blocked; equity validation has failed.
-
-| Statistic | Equity residual |
-|---|---:|
-| P5 | -103.54 |
-| Median | 184.07 |
-| Mean | 252.51 |
-| P95 | 904.48 |
-
-| Normal-regime structural scenario | Year 1 revenue | Year 5 | Year 10 | EV | Equity residual |
+| Scenario | Revenue y1 | y5 | y10 | EV | Equity |
 |---|---:|---:|---:|---:|---:|
-| Bear | 50.67 | 24.88 | 21.68 | -306.42 | -204.61 |
+| Bear | 50.67 | 24.88 | 21.68 | −306.95 | −205.14 |
 | Base | 100.12 | 221.47 | 328.27 | 147.41 | 249.22 |
 | Bull | 115.69 | 396.70 | 734.42 | 1718.48 | 1820.30 |
 
-Negative residuals denote funding distress, not negative share prices. P5/P95 now include scenario-parameter uncertainty (common factor), not only macro paths. Percentiles describe conditional macro-path uncertainty, not confidence intervals. Capital structure, refinancing, restructuring and parameter estimation remain unresolved.
+**Reverse DCF** (`python -m evaluation.reverse_dcf --equity 1200`): what one lever must become for equity to equal about $1.2T, the IPO-terms market cap. Diagnostic only.
 
-### Mandatory training and evaluation gate
-
-**Current status: BLOCKED; no validated valuation release.** [Research protocol](MODEL_VALIDATION_PROTOCOL.md) · [Repository instructions](AGENTS.md) · [Reproduced audit](evaluation/current_gate_audit.json) · [Evidence manifest schema](evaluation/RELEASE_MANIFEST_SCHEMA.md).
-
-Chronological issuer-family train/validation/test separation, five-year label-availability embargo, preregistered thresholds, frozen code/parameters/predictions and independent review are required. Revealed cohorts are development diagnostics only. Primary target is five-year equity market capitalization; revenue and cash flow are auxiliary. Project-specific gate: at least ten distinct issuer families across two technology cycles, WAPE <=30%, absolute signed bias <=15%, strictly beat flat capitalization and constant P/S. Machine checks are necessary but not proof of independent custody or source authenticity.
-
-Run `python -m evaluation.validation_gate --audit`; release candidate requires `python -m evaluation.validation_gate --manifest evaluation/release_manifest.json`. 118 local unit tests passed. Current historical diagnostic equity WAPE is 86.07%; complete company profiles, equity-loss training and blind final test are missing.
-
-### Engine revision (2026-11-19): what changed and why
-
-Seven structural defects were found in a review of the production engine and its backtests and are now fixed in the defaults. The earlier $164.04B headline is superseded; it remains reproducible from git history (commit `6ffc18c`). **These are corrected conditional scenario results, not a validated valuation: the release gate is still BLOCKED.**
-
-1. **Tail drift.** The lifecycle tail's raw state growth (1, 0.85, 1.08) together with the decline/renewal rates implied that surviving revenue *shrinks forever* (base −4.1%/yr, bear −9.8%/yr), while the scenarios' `terminal_growth` (2.5/3/3.5%) was never used. The growth vector is now rescaled so the survivor long-run growth equals `terminal_growth`; the states carry dispersion and timing, and exit remains a separate explicit loss. Base tail value at year 10 rises from 5.1x to 9.4x after-tax FCF (Gordon at 12%/3% is 11.4x).
-2. **Truncation.** Zero value after year 30 is replaced by the closed-form continuation of the same Markov reward chain.
-3. **Tail margins.** The tail used a hard-coded 15% margin in every scenario, including bear, whose own cost ratios are loss-making. Tail margins are now derived from each scenario's cost, other and capex ratios.
-4. **Limited liability.** Compute commitments were charged to equity after exit. The shortfall is now survival-weighted.
-5. **Hidden share loss.** The base enterprise ceiling moved effective capture from the observed ~41% of 2026 AI deployment spend down to an assumed 30%, so the ceiling bound in 9 of 10 years (constant boom 187.11 ≈ normal 187.05). Base now holds observed capture; bear 15% and bull 50% are unchanged. The ceiling no longer binds in base, so the customer-state engine now drives revenue (boom 266.22 > normal 249.22).
-6. **Backtest/Anthropic inconsistency.** The historical equity backtest used a 6%/yr tail exit hazard (vs. 0.13% for Anthropic) and forced every issuer's margin to 15%. Exit hazards are now shared across all models; issuers' margins now converge to a family-excluded m* (3-year half-life). `dcf_hold` holds the origin margin; `dcf_shared15` reproduces the old variant.
-7. **Instantaneous cost jump.** Year 1 applied the scenario's steady-state cost ratios (compute 48%, other 25%) although the reported nine-month ratios are 56.6% and 47.2%. Costs now start from the reported ratios and converge with a 3-year half-life, the development estimate from 18 cloud-software margin paths (see [margin path](#stage-4-margin-path-component-scored-once-now-development)). Base equity falls from 322.58 to 249.22; `cost_half_life=None` reproduces the jump.
-
-Two items were reviewed and deliberately *not* changed. First, compute commitments are still not credited with revenue. Commitments do not create demand, so the trace now reports `commitment_implied_revenue` and `idle_commitment_cost` instead (base idle cost 15.8/60.7/46.9/31.1B in years 1–4). Second, the 12% WACC plus explicit exit hazards are kept; only the uncredited tail shrinkage was removed.
-
-**Uncertainty.** `simulate()` now also draws scenario parameters (one common factor interpolating base→bear/bull, triangular on [−1, 1]) together with macro paths. This is a wide comonotone stress band, not an estimated posterior. Macro-only (old method): mean 199.72, P5 109.24, median 207.71, P95 262.33. With parameters: mean 252.51, P5 −103.54, median 184.07, P95 904.48, and 26.1% of paths are negative.
-
-### Reverse DCF (diagnostic)
-
-`python -m evaluation.reverse_dcf --equity 1200` reads off what the production engine would need to match a given equity value, for example the ~$1.2T market cap targeted by the IPO terms. The market value is an input, never a training label. From the base normal-regime case (249.22):
-
-| Lever (others at base) | Base | Needed for $1.2T |
+| Lever, others at base | Base | Needed |
 |---|---:|---:|
-| All scenario parameters toward bull (common factor) | 0 | 0.75 |
+| All parameters toward bull (factor z) | 0 | 0.75 |
 | WACC | 12% | 5.3% |
-| Survivor terminal growth | 3% | 10.7% |
-| Terminal capture / demand growth / acquisition rate / initial volume alone | — | not reachable (max ~249–263) |
+| Survivor terminal growth g | 3% | 10.7% |
+| Capture, demand growth, acquisition or volume alone | — | not reachable (max ≈ 249–263) |
 
-At factor 0.75: steady-state compute cost ratio 38%, other opex 21%, WACC 10.5%, capture 48%, sector-growth multiplier 1.37x. The implied steady-state after-tax margin is 26.4%, the 89th percentile of 18 cloud-software SBC-adjusted margin outcomes (base 15.75% is the 67th). Reported nine-month accrual ratios are 56.6% compute and 47.2% other. A single growth lever cannot reach $1.2T because faster growth re-binds the held-share ceiling. The market value therefore implies jointly better share, growth *and* margins, not one heroic assumption.
+At z = 0.75 the steady-state after-tax margin is 26.4%, the 89th percentile of 18 cloud-software SBC-adjusted outcomes (§3.2); the base 15.75% is the 67th.
 
-### Stage-4 margin-path component (scored once, now development)
-
-Five-year FCF margin, (CFO − capex − capitalized software) / revenue, was tested as a standalone component before any market-cap scoring, under a [preregistration](evaluation/stage4_margin_preregistration.md) written before any comparison was run. Inputs are original-vintage XBRL facts from the last annual filing filed on or before the origin ([inputs](data/stage4_origin_inputs.csv)). The selection used seven exposed-family observations ([panel](data/margin_dev_panel.csv)), predictions were frozen with SHA-256 hashes, and only then were labels opened ([labels](data/stage4_margin_labels.csv), [score](evaluation/stage4_margin_score.json)). Six acquired issuers have no label and are counted in coverage, not scored as zero (11/17 scored; 3/8 in cloud2015, 8/9 in cloud2020).
-
-| Model | Dev LOO MAE (pp) | Stage-4 MAE, all | cloud2015 | cloud2020 |
-|---|---:|---:|---:|---:|
-| hold origin margin | 9.64 | 23.44 | 18.60 | 25.26 |
-| fade to 15% | 11.12 | 15.07 | 13.39 | 15.69 |
-| pooled mean | 9.28 | 8.63 | 11.45 | 7.57 |
-| converge (3-year half-life) | 8.56 | 6.77 | 10.10 | 5.52 |
-| **leverage (preregistered pick)** | **4.94** | **8.87** | 5.99 | 9.94 |
-
-**Result: not promoted.** The preregistered pick beat `hold` by far but not `pooled`, overall or in cloud2020. `converge` was best ex post but cannot be promoted after the fact. Margins mean-revert into roughly 15–40% within six years whatever the start (−29% to +18%). Holding the origin margin underpredicted by 23 points. The roster is now retired to development. The modeler was not blind to these companies' history, and labels were not independently held.
-
-**Development estimate (18 observations, 16 families; `python -m evaluation.margin_development`).** Family-LOO MAE: hold 18.07 / pooled 8.93 / converge-3y 7.70 / converge-fitted 6.20 pp for CFO-based margins, and 16.56 / 10.28 / 7.26 / 5.40 for SBC-adjusted margins. With a 5–6 year horizon, the long-run level and the half-life are not separately identified: a fitted half-life runs to the 6-year grid edge. The engine therefore uses a fixed 3-year half-life (m* = 32.8% CFO-based, 18.1% SBC-adjusted). **SBC-adjusted margins** five to six years out have median 11.1%, mean 10.5%, s.d. 12.5 pp, P10 −9.3% and P90 24.4%. Much of the apparent CFO-margin expansion is stock compensation: Zscaler shows 27.2% before SBC and 2.4% after. Converging Anthropic's reported SBC-adjusted 7.2% toward 18.1% gives about 17% by year 10, consistent with the base steady state of 15.75%. The near-term cost path was adjusted accordingly (revision item 7).
-
-### Revenue-growth persistence (development)
-
-`python -m evaluation.growth_persistence` uses the same 18 observations. All are exposed, because target-year revenue was collected with the margin labels. The model decays log growth geometrically from g0 = ln(R0/R−1). Fitted half-life is 4 years, long-run growth 6.5%. Family-LOO error in five-to-six-year log revenue:
-
-| Model | LOO MAE (log) | ≈ % |
-|---|---:|---:|
-| flat | 1.436 | 320% |
-| hold starting growth | 0.660 | 94% |
-| engine-style linear 7-year fade from g0 | 0.242 | 27% |
-| fitted decay | 0.221 | 25% |
-
-The engine's fade *shape* is about as good as the fitted decay. What drives the Anthropic result is the *starting point*. The engine's base path from the 81B run rate is equivalent to a SaaS issuer with g0 ≈ 0.24–0.29, roughly the 17th–33rd percentile of the panel and similar to Adobe or Salesforce in 2020. Anthropic's observed g0 is ln(33.2/2.5) ≈ 2.57 over nine months, far above the panel maximum of 0.63 (Zoom, 2020). The panel therefore cannot say whether the engine's deceleration is too fast; extrapolating it would be meaningless. At such rates the binding economic constraint is the industry-spend ceiling, which is where the engine puts it. No default was changed. Reported revenue includes acquisitions, so persistence is an upper bound for organic growth.
-
-### Exits and the acquisition endpoint (development; policy proposed)
-
-`python -m evaluation.saas_exit` covers every member of both cloud rosters, 24 issuers with no survivor selection. Over five years: cloud2015 had 5 acquired out of 10 (about 12%/yr), cloud2020 had 1 out of 14 (about 2%/yr); pooled 6 of 24, Dirichlet(0.5) posterior 25.5% acquired, 90% interval 12.7–40.5%. There were no bankruptcies, against 2 of 18 in the dot-com cohort. All six deals were at 1.0–2.2x the May-2015 market cap where available ([events](data/stage4_exit_events.csv)). The acquired issuers were small ($3–26B). For an issuer of Anthropic's size, acquisition is not a plausible exit, so only distress exits belong in the zero-recovery hazard. The base case already does this; the bear case's zero-recovery all-cause delisting is a deliberate stress that this evidence does not support. A horizon-matched [acquisition endpoint policy](evaluation/acquisition_endpoint_policy.md) is **proposed, not approved**: label = equity value paid at close, prediction = model equity at the matched horizon (`predict_value(..., horizon=k)`), never zero. The gate remains BLOCKED until the owner approves it.
-
-## 2. Overarching valuation model
-
-The primary model is an open joint Markov revenue process with duration dependence, latent financial health, common macro regimes, vendor choice, personal demand and finite-horizon DCF. Calculation order: revenue baseline → demand ceilings and customer states → transitions and acquisition → revenue → cash flow → lifecycle continuation → equity.
-
-Enterprise invoices are tracked in three separate ledgers (pilot, live and employer seats). The state tensor X indexes enterprise lifecycle i, dwell d, health h and vendor v, conditional on common regime Z.
+## 1. Valuation model
 
 ```math
-\widetilde X_t^{(b)}=\mathcal K_{Z_t}\big(\mathcal G_t^{(b)}(X_{t-1})M_{Z_t}\big)+A_t^{(b)}
+V^{(\ell)}=\sum_{t=1}^{10}\frac{FCF^{(\ell)}_t}{(1+W)^t}+\sum_{t=11}^{\infty}\frac{\mathbb E[FCF_t\mid R^{(\ell)}_{10}]}{(1+W)^t}+Cash-Debt,\qquad \widehat V=\frac1L\sum_{\ell=1}^{L}V^{(\ell)}
 ```
+
+| Symbol | Meaning | Section |
+|---|---|---|
+| $V^{(\ell)}$ | equity residual on draw $\ell$ (macro path and parameters) | §1.5 |
+| $FCF_t$ | free cash flow, forecast years 1–10 | §1.2 |
+| $R_t$ | revenue | §1.1 |
+| $\mathbb E[FCF_t\mid R_{10}]$ | expected cash flow of the lifecycle continuation | §1.3 |
+| $W$ | discount rate (WACC) | §2 |
+| $Cash-Debt$ | pro forma bridge | §1.4 |
+| $L$ | number of draws, 1,024 | |
+
+### 1.1 Revenue
 
 ```math
-E_t=\sum_{b,i,d,h,v}\widetilde X_{idhv,t}^{(b)}r_v,\qquad R_t=\min(E_t,C_t)+B_t^{\mathrm{personal}}
+R_t=s_t\,\mathcal R(L_t+T_t+S_t)+B^{\mathrm{pers}}_t,\qquad s_t=\min\Big(1,\frac{C_t}{\mathcal R(L_t+T_t+S_t)}\Big),\qquad \mathcal R(X)=\sum_{i,d,h,v}X_{idhv}\,r_v
 ```
 
-```math
-V^{(\ell)}_{\mathrm{equity}}=\sum_{t=1}^{10}\frac{FCF^{(\ell)}_t}{(1+W)^t}+\sum_{t=11}^{\infty}\frac{\mathbb E[FCF_t\mid R_{10}^{(\ell)}]}{(1+W)^t}+Cash-Debt
-```
-
-```math
-\widehat V_{\mathrm{equity}}=\frac{1}{1024}\sum_{\ell=1}^{1024} V^{(\ell)}_{\mathrm{equity}}
-```
-Here G is ledger preprocessing for pilot conversion, growth and spending (see 5.6), b is the invoice ledger, K the reward-weighted lifecycle operator, M the conditional vendor transition, A new invoices and C the industry ceiling. Pilot conversion and price-volume factors are specified below. Cash flow is evaluated on each path before averaging.
-
-## 3. Revenue baseline
-
-**Observed inputs**
-
-| Input | Value | Definition |
-|---|---:|---|
-| $R_0$ | 81.000 | October annualized run rate |
-| $R_{9m}$ | 33.242 | Nine-month realized revenue |
-| $C_{9m}$ | 26.300 | Nine-month consumption revenue |
-
-**Consumption share:**
-
-```math
-\omega=\frac{C_{9m}}{R_{9m}}=\frac{26.300}{33.242}\approx79.12\%
-```
-
-**Initialize consumption and subscription revenue:**
-
-```math
-A_0=R_0\omega\approx64.085
-```
-
-```math
-B_0=R_0(1-\omega)\approx16.915
-```
-
-Source: [SEC prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm), [October run-rate disclosure](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074628/anthropicpbc-fwpjapanprospa.htm). Applying the historical mix to October is a proxy, not an observed October mix. Consumption does not mean strictly API revenue; subscription does not mean strictly consumer revenue.
-
-## 4. Demand and industry spending constraints
-
-### 4.1 Consumer demand and Netflix calibration
-
-For country $c$, age group $a$, and household-income group $h$, define:
-
-```math
-R_{\mathrm{consumer},t}
-=12\sum_{c,a,h}N_{cah,t}I_{cah,t}U_{cah,t}P_{cah,t}M_{cah,t}F_{cah,t}
-```
-
-| Symbol | Definition |
+| Symbol | Meaning |
 |---|---|
-| $N$ | Population in billions |
-| $I$ | Internet access probability |
-| $U$ | AI adoption conditional on access |
-| $P$ | Paid conversion conditional on adoption |
-| $M$ | Anthropic share among paying users |
-| $F$ | Monthly realized price in USD per paying user |
+| $L_t,T_t,S_t$ | live-API, pilot and employer-seat invoice tensors (§1.1.2) |
+| $r_v$ | revenue share Claude earns in vendor state $v$: $r=(1,0.6,0,0,0,0,0)$ |
+| $C_t$ | enterprise demand ceiling (§1.1.5) |
+| $s_t$ | ceiling scale, applied to all three tensors |
+| $B^{\mathrm{pers}}_t$ | personal subscriptions (§1.1.6) |
 
-**Evidence:** [Pew age-group survey](https://www.pewresearch.org/chart/majorities-of-adults-under-50-now-use-chatgpt/), [ITU connectivity](https://www.itu.int/itu-d/reports/statistics/facts-figures-2025/), [World Bank income groups](https://databank.worldbank.org/metadataglossary/world-development-indicators/country/HIC).
-
-US chatbot ever-use rates are not global paid conversion rates. Country GNI groups are not household-income groups. Unsupported markets must be excluded. The bottom-up function is implemented, but its missing country-level paid demand inputs prevent calibration; it is not added to the run-rate forecast.
-
-#### Netflix account-level calibration stress
-
-Netflix crossed 325M paid memberships in 2025 and reported an audience approaching 1B. An account is not a person: roughly three viewers share each paid membership. Define $N_N$ as paid accounts in billions, $A_N$ as viewers in billions, $q$ as viewers per account, and $k$ as assumed Claude individual paid accounts relative to Netflix paid accounts. The implied viewer-equivalent conversion is $k/q$, not $k$. This is a benchmark, not an identified AI conversion rate. China is excluded from Netflix; other service boundaries differ. Do not use global population as the denominator.
+#### 1.1.1 Starting point
 
 ```math
-N_C=N_N k=A_N\frac{k}{q},\qquad q=\frac{A_N}{N_N}\approx3.08
+\omega=\frac{C_{9m}}{R_{9m}}=\frac{26.300}{33.242}=79.12\%,\qquad A_0=R_0\,\omega=64.085,\qquad B_0=R_0(1-\omega)=16.915
 ```
+
+$R_0$ = 81, the October run rate. $A_0$ is consumption (API) revenue and $B_0$ subscription revenue; 50% of $B_0$ is assumed personal. Applying the nine-month mix to October is a proxy. Sources: [S-1](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm), [run-rate disclosure](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074628/anthropicpbc-fwpjapanprospa.htm).
+
+#### 1.1.2 Customer-state tensor
 
 ```math
-F_C=20\sum_r\frac{N_{N,r}}{\sum_j N_{N,j}}\frac{F_{N,r}}{17.20}\approx13.53
+X_t=\mathcal K_{Z_t}\big(\mathcal G_t(X_{t-1})\,M_{Z_t}\big)+A_t,\qquad X\in\mathbb R^{8\times3\times3\times7}
 ```
 
-```math
-R_C=12N_CF_C
-```
-
-2024 regional paid memberships (millions) and monthly revenue per membership: US/Canada 89.625 / $17.20; EMEA 101.133 / $10.96; LATAM 53.327 / $8.24; APAC 57.541 / $7.29. Assume the same geographic account mix and relative price index; $20 is a North American price assumption. This does not establish actual Claude regional pricing. Paid account ratios 5%, 15%, 30% are illustrative, equivalent to approximately 1.63%, 4.88%, 9.75% of Netflix's audience. The personal ceiling phases any personal revenue reduction in over five years and leaves employer invoices untouched. Valuations below are reduced-model comparisons, not the main results. No cap is asserted in the lifecycle tail; personal payers are net of employer substitution in the forecast.
-
-| Scenario | k | Paid accounts (M) | Revenue ceiling ($B) | Stress EV ($B) | Stress equity ($B) |
-|---|---:|---:|---:|---:|---:|
-| Bear | 5% | 16.25 | 2.64 | -282.41 | -180.60 |
-| Base | 15% | 48.75 | 7.91 | 81.43 | 183.24 |
-| Bull | 30% | 97.50 | 15.83 | 1179.80 | 1281.61 |
-
-[Netflix 2024 SEC 10-K](https://www.sec.gov/Archives/edgar/data/1065280/000106528025000044/nflx-20241231.htm) · [2025 Q4 shareholder letter](https://www.sec.gov/Archives/edgar/data/1065280/000106528026000033/ex991_q425.htm) · [Netflix supported markets](https://help.netflix.com/en/node/14164/).
-
-Reproduce: `python -m models.netflix_benchmark`.
-
-### 4.2 Employer access and personal substitution
-
-Consumption and subscription are invoice categories, not unique people. Split subscriptions into personal and enterprise invoices (initial personal fraction 50% assumption). Let A denote personal payment and B employer access.
-
-```math
-\Pr(A\cup B)=\Pr(A)+\Pr(B)-\Pr(A\cap B)
-```
-
-```math
-\Pr(A)=\Pr(A\mid B)\Pr(B)+\Pr(A\mid B^c)(1-\Pr(B))
-```
-
-```math
-\kappa=1-\frac{\Pr(A\mid B)}{\Pr(A\mid B^c)},\qquad \Pr(A)=\Pr(A\mid B^c)(1-\kappa\Pr(B))
-```
-
-Actual separate invoices both count; only conditional demand is adjusted. Let employer coverage interpolate from e0 to e10. Personal revenue is scaled relative to baseline overlap; enterprise subscription dynamics are specified in Section 5.6.
-
-```math
-e_t=e_0+(e_{10}-e_0)\min(t/10,1)
-```
-
-```math
-B^{raw}_t=B^{raw}_{t-1}(1+bd_t)
-```
-
-```math
-B_t^{personal}=\min\left(B_t^{raw}\frac{1-\kappa e_t}{1-\kappa e_0},R_C+\max(0,B_0^{personal}-R_C)\max(0,1-t/5)\right)
-```
-
-Reset raw personal revenue to capped personal revenue divided by the overlap ratio each year.
-
-### 4.3 Enterprise demand and industry ceiling
-
-For country $c$, industry $j$, and firm-size group $k$:
-
-```math
-R_{\mathrm{enterprise},t}
-=12\sum_{c,j,k}E_{cjk,t}D_{cjk,t}X_{cjk,t}M_{cjk,t}
-```
-
-| Symbol | Definition |
+| Symbol | Meaning |
 |---|---|
-| $E$ | Employees in billions |
-| $D$ | Fraction of employees in adopting firms (employee-weighted) |
-| $X$ | Mean monthly AI spend per employee in adopting firms |
-| $M$ | Anthropic share of that spending |
+| $X_{idhv}$ | invoice mass by lifecycle $i$ (seed 0–4+, scale-up, SME, large), dwell $d$ (0/1/2+), health $h$, vendor $v$ |
+| $Z_t$ | macro regime: winter, normal or boom (§1.1.2.3) |
+| $M_{Z}$ | vendor transition matrix (§1.1.2.4) |
+| $\mathcal K_Z$ | lifecycle and health kernel, sub-stochastic; the residual is closure (§1.1.2.1) |
+| $\mathcal G_t$ | growth operator (§1.1.3) |
+| $A_t$ | new invoices (§1.1.4) |
 
-Source: [Ramp AI Index](https://ramp.com/data/ai-index?stream=top). Ramp firm-level adoption and median spending cannot substitute for employee-weighted adoption and mean spending without additional weighting data. This check is not yet calibrated and is not added to the forecast.
-
-The combined Netflix/industry/lifecycle stress is reproducible with `python -m models.industry_calibration`. IDC's broad AI spending estimates by industry are in [industry_spending.csv](data/industry_spending.csv); the 2024 and 2028 totals are 234.6 and 631.4. They are analyst estimates/forecasts, not realized foundation-model invoices. Menlo estimates 176.8 of 2026 deployment spending, including 94.2 model/inference; its sample comprises US decision makers and Menlo is an Anthropic investor. Use IDC sector weights and growth rates to extrapolate the Menlo proxy, not to add the two totals. 2026 sector weights interpolate IDC's 2024–2028 endpoints.
-
-```math
-g_i=(B_{i,2028}/B_{i,2024})^{1/4}-1,\quad w_i=\frac{\sqrt{B_{i,2024}B_{i,2028}}}{\sum_j\sqrt{B_{j,2024}B_{j,2028}}}
-```
+##### 1.1.2.1 Lifecycle kernel
 
 ```math
-D_{i,0}=176.8w_i,\quad D_{i,t}=D_{i,t-1}[1+0.03+(m g_i-0.03)\max(0,1-\max(0,t-2)/8)]
+g_k=\frac{F_k-F_{k-1}}{U_{k-1}},\qquad U_k=U_{k-1}(1-g_k-b_k-h_k),\qquad h^{\mathrm{eff}}_{i}=\min\big(0.95,\;h_i\,m^{Z}_{\mathrm{death}}\,m^{H}_{\mathrm{death}}\big)
 ```
 
-```math
-C_t=\left[c_0+(c_{10}-c_0)\min(t/10,1)\right]\sum_iD_{i,t},\quad c_0=\frac{81-B_0/2}{176.8}
-```
-
-The effective capture c includes geography, vendor share, application/infrastructure overlap and downstream leakage; it is not observed. The starting ratio implicitly assumes 50% of subscription revenue is personal. The three growth multipliers m are 0.7, 1, 1.5 and terminal effective captures are 15%, held at the observed starting capture (~41%), and 50%, all explicit assumptions. The base value was previously 30%, which silently assumed share loss. The enterprise ceiling replaces rather than stacks with the arbitrary aggregate ceiling; it includes all consumption as a proxy and excludes personal invoices. No sector-level Claude invoice share or exact supported-country denominator is identified. The lifetime tail carries forward year-10 total revenue without an additional cap.
-
-## 5. Joint enterprise revenue state model
-
-**Parameter identification:** Full-engine synthetic recovery on three training regime paths and two held-out mixed paths: nine free parameters, financial-only Jacobian rank six, augmented with direct conversion, price, volume, capex and unit-cost measurements rank nine. Exact conversion × rollout and other expense + CapEx equivalences; local cost split nonidentification when commitments are nonbinding. Synthetic equity prediction errors near numerical zero do not establish empirical performance. See [experiment](evaluation/full_model_identification_protocol.md); `python -m evaluation.full_model_identification` (SciPy).
-
-**Age-dependent survival candidate.** Fit the BLS 2013 information-establishment cohort ages 1–5 using a Weibull survival curve: shape 0.642, scale 6.898 years. Ages 6–10 diagnostic survival MAE falls from 6.334 to 0.546 percentage points (same cohort, not independent). Seed-age hazard estimates: 25.14%, 14.97%, 12.56%, 11.20%, pooled 4+ 8.97%. With European seed-to-A CIF anchors and all mechanisms active, 128 matched macro paths yield $197.22B mean conditional equity vs $196.67B baseline (post-revision). This is a component candidate, not full historical equity accuracy or parameter promotion. See [protocol](evaluation/full_model_survival_protocol.md); `python -m evaluation.full_model_survival`.
-
-### 5.1 Customer groups, closure and commercial churn
-
-BLS establishment survival gives annual closure proxies (early information 15.03%, age 5–10 information 8.06%, age 5–10 general 7.27%); large-company distress proxy 0.132% is described in Section 7. PitchBook funding-stage eventual failure is documented but not annualized without a horizon. Ramp January 2026 reports ~4% monthly customer-count cancellation, not revenue loss; annualizing is a constant-rate sensitivity. Base revenue weights early/scale-up/SME/large are 15/25/30/30%, churn transfer factors f are 0.8/0.55/0.45/0.20. They are unknown, assumed. Conditional commercial loss q removes overlap with closure h. The resulting annual retention is 69.0/78.7/82.6/92.3%. The prior market-share multiplier is omitted to avoid counting cancellation twice.
-
-```math
-p_L=1-(1-0.04)^{12}=0.38729
-```
-
-```math
-q_i=\max\left(0,\frac{f_i p_L-h_i}{1-h_i}\right),\qquad s_i=(1-h_i)(1-q_i)
-```
-
-Initial invoices are allocated by customer group; seed tenure weights are 30/25/20/15/10% within the early group; pilot shares are scenario inputs. [Official customer examples](https://www.anthropic.com/customers) are not representative of actual revenue weights.
-
-**Capital recycling diagnostic (not identified):**
-
-```math
-\phi_{\mathrm{VC}}=\frac{\sum_i R_i f_i}{\sum_i R_i}
-```
-
-Here $R_i$ is customer revenue and $f_i$ is its fraction funded by venture capital. Invoice-level funding attribution is missing. Ramp's spend concentration and JPMorgan's VC-backed firm-count share cannot be multiplied to identify this parameter.
-
-### 5.2 Open lifecycle and seed birth budget
-
-Seed tenure states 0,1,2,3,4+, scaleup, mature SME, large, and permanent closure. New seed entrants are external; closure is absorbing. Dealroom's European 2016–18 seed cohort (3,075) reached Series A at 6/18/27/31% cumulatively after 1/2/3/4 years. Carta US cohorts reached 12.9% in one year (2024 Q3) and 32.7% in two years (2021 Q1), different vintages. Base incidence 10/22/31/36% interpolates scenario anchors, not an estimated cohort. The competing-risk conversion uses remaining seed risk mass (not 1 minus cumulative financing alone).
-
-```math
-g_k=\frac{F_k-F_{k-1}}{U_{k-1}},\quad U_k=U_{k-1}(1-g_k-b_k-h_k)
-```
-
-```math
-\mathbf n_{t+1}=\mathbf n_tP_t+B_t\mathbf e_0,\quad \sum_j P_{ij}=1
-```
-
-Base seed→scaleup hazards by tenure are 10/16.91/19.79/17.97/3.5%; seed→SME 4%; closure 15.03%. Scaleup→SME/large 12/2%, SME→large 0.5%, large→SME 0.5%, all operational transitions assumed. Census high-growth share (under 8% among young continuing firms in 2020) is a reality check, not a maturation probability. 1,000 newly seed-funded firms in base year 10: 37.9 remain seed, 64.3 scaleup, 193.0 SME, 34.4 large, 670.4 closed. Not an observed cohort.
-
-NVCA 2025 US pre-seed/seed: 5,049 deals, $22.3B. Base assumes global eligible multiplier 2, unique-company factor .75, Claude capture .25, 5% of average round spent annually on Claude. Potential newly paying firms 1,893 and revenue ceiling $0.418B/year. Deals are not unique births and ARPA is not observed. Non-VC births, customer reacquisition, M&A and correlations remain unresolved.
-
-```math
-B_t=D_{US}G u c,\quad A=\frac{K_{US}}{D_{US}}f,\quad R_{birth,t}=\min(0.2J_t,B_tA)
-```
-
-Revenue migration assumes transition independent of invoice size within each state; baseline upgrade spend multiplier 1.35 and downgrade 0.75.
-
-The joint tensor has 8 live lifecycle states × 3 dwell buckets × 3 latent health states × 7 vendor states (504 customer combinations); there are 3 common macro regimes.
-
-### 5.3 Latent health and duration dependence
-
-```math
-\pi_{0,h|y}=\frac{\pi_{0,h}P(y|h)}{\sum_k\pi_{0,k}P(y|k)},\qquad P(y=1|h)=(.15,.75,.25)
-```
-
-Normal health transition rows: (.67,.23,.10), (.18,.62,.20), (.04,.10,.86). Winter tilts toward distress, boom away. Conditional health death multipliers 1.6/1/.55 and spending .75/1/1.10 are assumptions applied annually. Non-seed duration buckets 0/1/2+ multiply promotion by .55/1/1.20; seed duration already represented in prior chain, no second seed duration multiplier. All current/new invoice cohorts start at dwell zero for non-seed (unknown actual tenure); reset on group change.
-
-### 5.4 Macro regime and correlated risk
-
-```math
-P_Z=\begin{pmatrix}.60&.35&.05\\.18&.67&.15\\.08&.42&.50\end{pmatrix}
-```
-
-Regime order winter/normal/boom; death multipliers 1.5/1/.75, promotion and new-sales/birth multipliers .65/1/1.25. Not estimated: Carta 2023 funding fell 50%, deal count 24%; Q1 2024 closure count rose 58%, seed 102%, A 61%, B 133%, not closure hazards. Shared regime induces correlation; no additional idiosyncratic firm risk or parameter uncertainty simulated.
-
-### 5.5 Vendor competition, token pricing and deployment
-
-Vendor states Claude-only, multi-with-Claude, OpenAI, Google, self-hosted, other, none; reward (1,.60,0,0,0,0,0). Ramp January 2026 79% of Claude payer accounts also pay OpenAI, used as equal gross budget initialization proxy normalized to actual Claude mass; not observed spend fraction. September 8% monthly firms changed top provider (not cancellation). Menlo 2026 estimates API spend shares 55/31/9% Claude/OpenAI/Google; not transition probabilities. Existing conditional commercial churn is routed to other providers/dormancy once, never additionally multiplied. Exit destination shares .35/.25/.15/.10/.15; reacquisition .06 annually from rivals and .035 from none (normal regime). Multi↔single conditional switches .12/.04, all assumptions. Rival states are aggregate competing destinations, not exclusive real-world vendor portfolios. Initial rival mass zero; new acquisitions and reactivation coexist, no finite outside market measured and possible overlap cannot be empirically resolved.
-
-The fundamental identity:
-
-```math
-R_{\mathrm{token},t}=Q_t P_t M_t
-```
-
-$Q_t$ is total token volume, $P_t$ is realized USD per token, and $M_t$ is provider volume share under a consistent price convention.
-
-At unchanged share, the volume growth required to offset a price decline $\delta$ is:
-
-```math
-g_Q=\frac{1}{1-\delta}-1
-```
-
-```math
-\delta=50\%\quad\Longrightarrow\quad g_Q=100\%
-```
-
-In the forecast, annual multipliers fade toward one:
-
-```math
-d_t=\max\left(0,1-\frac{t-1}{7}\right)
-```
-
-```math
-G(L,p,m,r)=L\left[pm+(1-p)r\right]
-```
-
-| Symbol | Definition |
+| Symbol | Value / meaning |
 |---|---|
-| $L$ | Existing pilot revenue |
-| $p$ | Successful deployment fraction, assumed revenue-weighted |
-| $m$ | Spend expansion conditional on success |
-| $r$ | Residual spend of unsuccessful projects |
+| $F_k$ | cumulative seed→Series A incidence after $k$ years: 10/22/31/36% (base) |
+| $g_k,b_k,h_k$ | graduation, bootstrap and closure hazards of the seed tenure states |
+| $h_i$ | annual closure by group: early 15.03%, scale-up 8.06%, SME 7.27%, large 0.132% (BLS establishments; large = distress proxy) |
+| $m^{Z}_{\mathrm{death}}$ | 1.5 / 1 / 0.75 for winter / normal / boom |
+| $m^{H}_{\mathrm{death}}$ | 1.6 / 1 / 0.55 for distressed / funded / self-sustaining |
+| Promotion | × $m^Z_{\mathrm{grow}}$ = 0.65 / 1 / 1.25; dwell multiplier 0.55 / 1 / 1.20; spending jump 1.35 up, 0.75 down |
 
-The implemented forecast sets $r=0$ and transfers successful pilots into the live deployment ledger (not the mature firm state):
+##### 1.1.2.2 Latent health
 
 ```math
-G_t=p\,m\,L_{t-1}
+\pi_{0,h\mid y}=\frac{\pi_{0,h}P(y\mid h)}{\sum_k\pi_{0,k}P(y\mid k)},\qquad P(y=1\mid h)=(0.15,\,0.75,\,0.25)
 ```
 
-Break-even example:
+$y$ = recent funding observed. Normal-regime rows are (.67, .23, .10), (.18, .62, .20) and (.04, .10, .86); winter tilts toward distress and boom away from it. Health also scales spending by 0.75 / 1 / 1.10.
+
+##### 1.1.2.3 Macro regime
 
 ```math
-G(100,0.25,4,0)=100
+P_Z=\begin{pmatrix}0.60&0.35&0.05\\0.18&0.67&0.15\\0.08&0.42&0.50\end{pmatrix}\quad(\text{winter, normal, boom})
 ```
 
-Evidence: [Gartner project abandonment](https://www.gartner.com/en/articles/genai-project-failure), [McKinsey enterprise AI impact](https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai-2025), [ChartMogul downstream retention](https://chartmogul.com/reports/saas-retention-the-ai-churn-wave/). Project-count abandonment, EBIT impact and software NRR measure different outcomes; none directly identifies the revenue-weighted $p$.
-
-### 5.6 Revenue recursion and new customer acquisition
-
-Let d denote growth fade, n acquisition growth, rho maturity replacement. L, T and B are live, pilot and employer-seat tensors; r is the vendor reward and ℛ its weighted sum. Planned loss uses group retention s; macro growth multiplier x scales new sales.
+##### 1.1.2.4 Vendor transitions
 
 ```math
-\mathcal R(X)=\sum_{i,d,h,v}X_{idhv}r_v,\qquad \mathcal L(X)=\sum_{i,d,h,v} X_{idhv}r_v(1-s_i)
+M_{i\to w}=\begin{cases}c\,\delta_w & w\in\{\mathrm{OpenAI,Google,self,other,none}\}\\(1-c)\,\sigma & \text{single}\leftrightarrow\text{multi}\\(1-c)(1-\sigma)&\text{stay}\end{cases},\qquad c=\Big(1-\frac{s_g}{1-h_g}\Big)m^Z_c
 ```
 
-```math
-J_t^{API}=x_{Z_t}[nd_t\mathcal R(L+T)+\rho(1-d_t)\mathcal L(L+T)]
-```
+| Symbol | Value / meaning |
+|---|---|
+| $s_g$ | annual revenue retention by group: 69.0 / 78.7 / 82.6 / 92.3% |
+| $\delta$ | exit destination shares: .35 / .25 / .15 / .10 / .15 |
+| $\sigma$ | switch probability: 0.12 single→multi, 0.04 multi→single |
+| $m^Z_c$ | 1.3 winter, 0.85 boom |
+| Regain | 0.06/yr from rivals, 0.035/yr from none, × $m^Z_{\mathrm{grow}}$ |
+
+#### 1.1.3 Growth operator
 
 ```math
-J_t^{seat}=x_{Z_t}[nd_t\mathcal R(B)+\rho(1-d_t)\mathcal L(B)]
-```
-
-```math
-J_t^{birth}=\min(0.2J_t^{API},\mathrm{BirthBudget}_t),\qquad J_t^{existing}=0.8J_t^{API}
-```
-
-```math
-\alpha_t=0.1+0.5d_t,\quad F_{i,t}=1+(f-1)d_t\;\;(i\in \mathrm{startup/scaleup})
-```
-
-```math
-K_t=[1+(v-1)d_t][1-(1-q)d_t]
+d_t=\max\Big(0,1-\frac{t-1}{7}\Big),\qquad \mu_t=[1-(1-p)d_t]\,[1+(q-1)d_t],\qquad \alpha_t=0.1+0.5\,d_t
 ```
 
 ```math
-L_t=\mathcal K_{Z_t}([(L_{t-1}+pmT_{t-1})F_t K_t H]M_{Z_t})+(1-\alpha_t)A_t
+L_t=\mathcal K\big([(L_{t-1}+\phi\,\rho\,T_{t-1})\,F_t\,\mu_t\,H]\,M\big)+(1-\alpha_t)A_t,\qquad T_t=\alpha_tA_t,\qquad S_t=\mathcal K\big([S_{t-1}F_t(1+b\,d_t)H]\,M\big)+A^{\mathrm{seat}}_t
+```
+
+| Symbol | Meaning (base) |
+|---|---|
+| $d_t$ | growth fade (§3.3 tests this shape) |
+| $p,q$ | initial price and volume multipliers: 0.78, 1.65 |
+| $\phi,\rho$ | pilot success and rollout: 0.35, 3 |
+| $F_t$ | funding multiplier for early and scale-up firms: $1+(f-1)d_t$ |
+| $H$ | health spend multiplier |
+| $b$ | subscription growth: 12% |
+
+#### 1.1.4 New customers
+
+```math
+J_t=x_{Z_t}\big[n\,d_t\,\mathcal R(X_{t-1})+\eta(1-d_t)\,\mathcal L(X_{t-1})\big],\qquad \mathcal L(X)=\sum X_{idhv}r_v(1-s_i),\qquad J^{\mathrm{birth}}_t=\min(0.2J_t,\;\mathrm{Budget}_t)
+```
+
+$n$ = 0.20 is the acquisition rate, $\eta$ = 1 the maturity replacement and $x_Z$ the macro sales multiplier. Budget = US seed deals 5,049 × global 2 × unique 0.75 × capture 0.25 × 5% of the average round, giving 0.418 per year.
+
+#### 1.1.5 Enterprise ceiling
+
+```math
+C_t=c_t\sum_i D_{i,t},\qquad D_{i,t}=D_{i,t-1}\big[1+0.03+(m\,g_i-0.03)\max\Big(0,1-\frac{\max(0,t-2)}{8}\Big)\big],\qquad c_t=c_0+(c_{10}-c_0)\min(t/10,1)
+```
+
+| Symbol | Meaning |
+|---|---|
+| $D_{i,0}$ | Menlo 2026 deployment spend 176.8 × IDC sector weight $w_i$ |
+| $g_i$ | IDC 2024–28 sector CAGR; $m$ = 0.7 / 1 / 1.5 |
+| $c_0$ | $(81-B_0/2)/176.8$ = 41%, the observed starting capture |
+| $c_{10}$ | 15% bear, $c_0$ base (held), 50% bull |
+
+Sources: [IDC](https://info.idc.com/rs/081-ATC-910/images/DA-Market-Primer-AI-and-GenAI.pdf), [Menlo 2026](https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/).
+
+#### 1.1.6 Personal subscriptions
+
+```math
+B^{\mathrm{pers}}_t=\min\Big(B^{\mathrm{raw}}_t\frac{1-\kappa e_t}{1-\kappa e_0},\;R_C+\max(0,B^{\mathrm{pers}}_0-R_C)\max(0,1-t/5)\Big),\qquad R_C=12\,N_N\,k\,F_C
+```
+
+| Symbol | Meaning |
+|---|---|
+| $\kappa$ | cannibalization of personal plans by employer access: .8 / .5 / .2 |
+| $e_t$ | employer coverage, linear from 0.4 to 0.8 / 0.7 / 0.6 |
+| $N_N$ | Netflix paid accounts, 0.325B |
+| $k$ | Claude-to-Netflix account ratio: 5 / 15 / 30% |
+| $F_C$ | region-weighted price, $13.53/month |
+
+Source: [Netflix 10-K](https://www.sec.gov/Archives/edgar/data/1065280/000106528025000044/nflx-20241231.htm).
+
+### 1.2 Free cash flow (years 1–10)
+
+```math
+Y_t=R_t-\max\big(K^{\mathrm{floor}}_t,\;c_tR_t\big)-(o_t+x_t)R_t,\qquad FCF_t=Y_t-0.25\max(Y_t,0)
+```
+
+#### 1.2.1 Cost path
+
+```math
+\theta_t=\theta^\ast+(\theta_0-\theta^\ast)\,2^{-t/H},\qquad \theta=(c,o,x),\qquad H=3
+```
+
+$\theta_0$ = (56.6%, 47.2%, 2.8%) is reported nine-month compute, other opex and capex. $\theta^\ast$ is the scenario steady state, (48%, 25%, 6%) in the base case. $H$ = 3 years is the development estimate from 18 cloud-software margin paths (§3.2). `cost_half_life=None` jumps to $\theta^\ast$ at $t=1$.
+
+#### 1.2.2 Compute commitments
+
+```math
+K^{\mathrm{floor}}_1=70.7,\qquad K^{\mathrm{floor}}_{2..4}=\frac{451.6-70.7}{3},\qquad K^{\mathrm{floor}}_{5..19}=\frac{900.9-451.6}{15},\qquad K^{\mathrm{floor}}_{20+}=0
+```
+
+Commitments are a cash floor and create no revenue. The trace reports `commitment_implied_revenue` = $K/c$ and `idle_commitment_cost`; base idle cost is 15.8 / 60.7 / 46.9 / 31.1 in years 1–4.
+
+### 1.3 Continuation value (t > 10)
+
+```math
+a_{10}=(R_{10},0,0,0),\qquad a_t=a_{t-1}A,\qquad A=P\,\mathrm{diag}\big(k(1+g),\,0.85k,\,1.08k(1+g),\,0\big)
 ```
 
 ```math
-T_t=\alpha_t A_t,\quad B_t=\mathcal K_{Z_t}([B_{t-1}F_t(1+bd_t)H]M_{Z_t})+A_t^{seat}
+\mathbb E[FCF_t]=a_t\,\mu-S_t\max\Big(0,\;K^{\mathrm{floor}}_t-\frac{c\,\mathbf 1^\top a_t}{S_t}\Big),\qquad \sum_{t>30}\frac{\mathbb E[FCF_t]}{(1+W)^t}=\frac{a_{30}B(I-B)^{-1}\mu}{(1+W)^{30}},\quad B=\frac{A}{1+W}
 ```
-A allocates existing-firm acquisition by group and new seed revenue only to Seed0. H is latent-state spend multiplier; F=1 for other firms. Seats and API invoices are not unique customer counts. If the industry ceiling binds, scale all three tensors proportionally (including zero-reward opportunity mass). Vendor transitions already include commercial churn; no additional share fade.
 
-## 6. Compute commitments and free cash flow
+| Symbol | Meaning |
+|---|---|
+| $a_t$ | expected revenue mass in states (mature, declining, renewed, exited) |
+| $k$ | rescales growth so the survivor long-run growth equals $g$: $\rho\big(P_{1:3,1:3}\,\mathrm{diag}(1+g,\,0.85,\,1.08(1+g))\big)\,k=(1+g)(1-e)$ |
+| $g$ | terminal growth: 2.5 / 3 / 3.5% |
+| $S_t$ | survival probability; equity bears no commitments after exit |
+| $\mu$ | state margins (§1.3.2) |
 
-[SEC prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074338/anthropicpbc-sx1ax3.htm): aggregate commitments 900.9, including 70.7 in next 12 months and 451.6 by end of 2030. Approximate annual buckets reconcile total; actual calendar maturity schedule is unknown.
+#### 1.3.1 Lifecycle chain and exit hazard
 
 ```math
-K^{floor}_1=70.7,\qquad K^{floor}_{2:4}=(451.6-70.7)/3
+P=\begin{pmatrix}1-e-\delta-u&\delta&u&e\\0.10&0.90-e-u&u&e\\0.40&\delta&0.60-e-\delta&e\\0&0&0&1\end{pmatrix},\qquad e=\big[1-(1-0.08)^{1/5}\big]\,\varsigma
 ```
+
+$e$ counts only zero-recovery **distress** exits; acquisitions pay shareholders (§3.4). $\varsigma$ is the distress share of large-firm delistings: 8% in base ([Daepp et al.](https://doi.org/10.1098/rsif.2015.0120)) and 50% in bear (dot-com bankruptcies over all exits, 2/4). Bull uses $e$ = 0.09%/yr, the historical large-US failure rate. Decline $\delta$ = .30 / .20 / .10 and renewal $u$ = .03 / .08 / .15. Source for the 8%/5y delisting rate: [BCG](https://www.bcg.com/publications/2026/why-do-companies-fail-us-failure-rates).
+
+#### 1.3.2 State margins
 
 ```math
-K^{floor}_{5:19}=(900.9-451.6)/15,\qquad K^{floor}_{20:30}=0
+\mu=\big(m,\;0.2m,\;\min\Big(0.6,\frac{4m}{3}\Big),\;0\big),\qquad m=(1-c^\ast-o^\ast-x^\ast)(1-0.25)
 ```
+
+Base $m$ = 15.75%. Bear's own cost ratios are loss-making, so its tail is negative.
+
+### 1.4 Equity bridge
 
 ```math
-C_t=\max(K^{floor}_t,cR_t),\qquad O_t=oR_t,\qquad X_t=xR_t
+Cash-Debt=212.684-110.873
 ```
+
+Pro forma cash and the convertible carrying value are illustrative. The updated as-adjusted bridge (232.351 − 109.742) adds 20.80. Dilution and final capitalization are unresolved.
+
+### 1.5 Uncertainty
 
 ```math
-Y_t=R_t-C_t-O_t-X_t,\qquad FCF_t=Y_t-0.25\max(Y_t,0)
+Z_{t}\sim P_Z,\qquad z\sim\mathrm{Tri}(-1,0,1),\qquad \theta(z)=\theta_{\mathrm{base}}+|z|\,(\theta_{\mathrm{side}(z)}-\theta_{\mathrm{base}})
 ```
 
-Cash tax proxy, no working capital forecast. Commitments are a floor, not additional spend on top of variable compute. Historical CFO less PPE purchases is 5.644, or 3.689 after lease prepayments; neither is normalized FCFF.
+One common factor moves every scenario parameter together toward bear ($z<0$) or bull ($z>0$). This is a wide comonotone stress band, not an estimated posterior. Macro paths alone give mean 199.72 and P5–P95 of 109.24–262.33.
 
-## 7. Anthropic lifecycle continuation value
-
-```math
-p_D=1-(1-0.08)^{1/5}=0.01654,\quad p_{\mathrm{distress,proxy}}=p_D(0.045+0.035)=0.001323
-```
-
-BCG's 30,000+ US-listed firms show 8% all-cause five-year delisting for revenue over 3.5B. Daepp et al. report 4.5% bankruptcy and 3.5% liquidation among recorded exits across a different historical population. Their product is a cross-sample distress proxy, not an estimated Anthropic-specific hazard. Historical large-US outright failure was 0.09% per year, an independent order-of-magnitude check. The bear case treats all delistings as zero recovery (deliberately severe), not a claim that acquisitions destroy value. Decline/renewal rates remain uncalibrated and exit applies only after year ten; no M&A recovery is credited. These are bounds/sensitivities, not statistical confidence intervals.
-
-Sources: [IDC 2024 AI primer](https://info.idc.com/rs/081-ATC-910/images/DA-Market-Primer-AI-and-GenAI.pdf), [Menlo 2026](https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/), [BCG 1975–2025](https://www.bcg.com/publications/2026/why-do-companies-fail-us-failure-rates), [Daepp et al. 2015](https://doi.org/10.1098/rsif.2015.0120), [large UK listed corporations study (also reports historical large-US benchmark)](https://doi.org/10.1080/00076791.2021.1893696).
-
-### 7.1 Why replace the Gordon Growth Model?
-
-The Gordon model assumes a normalized cash flow grows at a fixed rate indefinitely, conditional on a continuing business:
-
-```math
-TV_T=\frac{FCF_T(1+g)}{W-g}
-```
-
-It is mathematically valid when the cash-flow assumptions hold and the discount rate exceeds growth. It is not a reliable default for a young model provider facing commoditization, price competition and business-model displacement. A zero or negative growth rate is possible even in Gordon; the issue is imposing one permanent regime.
-
-- [Chan, Karceski and Lakonishok (2003)](https://www.nber.org/papers/w8282) find weak persistence and limited predictability of long-run firm earnings growth.
-- [BLS 2013 cohort](https://www.bls.gov/opub/ted/2024/34-7-percent-of-business-establishments-born-in-2013-were-still-operating-in-2023.htm): 34.7% of business establishments survived ten years.
-- [BLS 2000 cohort](https://www.bls.gov/opub/ted/2026/outlast-state-establishment-survival-rates-from-2000-to-2026.htm): 15.7% survived 26 years. These are establishments, not matched public technology firms; neither number calibrates Anthropic's hazard.
-
-A growing industry does not guarantee a particular company's cash flows grow. Industry gains may accrue to customers and competitors. The new model permits contraction, renewal, and absorbing exit. Years 11–30 are explicit (commitment schedule and trace). After that the same chain continues in closed form, replacing the former zero-value truncation. Survivor long-run growth equals the scenario's terminal growth g, through the scale factor k below.
-
-Start year 10 in Mature. States in order: Mature, Declining, Renewed, Exited. Exit is absorbing. Annual exit probability e, decline probability d, renewal probability u are assumed, not fitted.
-
-```math
-P=\begin{pmatrix}1-e-d-u&d&u&e\\0.10&1-e-0.10-u&u&e\\0.40&d&1-e-0.40-d&e\\0&0&0&1\end{pmatrix}
-```
-
-```math
-\pi_{10}=(1,0,0,0),\qquad \pi_t=\pi_{t-1}P
-```
-
-Expected revenue mass by state, not merely probability times a fixed revenue, preserves path-dependent growth.
-
-```math
-a_{10}=(R_{10},0,0,0),\qquad a_t=a_{t-1}P\,\mathrm{diag}(k(1+g),0.85k,1.08k(1+g),0),\qquad \rho\big(P_{1:3,1:3}\mathrm{diag}(k(1+g),0.85k,1.08k(1+g))\big)=(1+g)(1-e)
-```
-
-```math
-E[R_t]=\sum_j a_{t,j}
-```
-
-After-tax cash margins by state are derived from the scenario: mature m = (1−c−o−x)(1−0.25) when positive, declining 0.2m, renewed min(0.6, 4m/3), exit 0. These include ordinary variable compute, other expenses and capex (base m = 15.75%, the 67th percentile of 18 cloud-software SBC-adjusted outcomes; bear is loss-making). No new revenue ceiling is applied in the tail. Under limited liability, equity bears the commitment shortfall only on surviving mass.
-
-```math
-E[FCF_t]\approx \sum_j a_{t,j}\mu_j-S_t\max\!\big(0,K^{floor}_t-cE[R_t]/S_t\big),\qquad S_t=1-\pi_{t,\mathrm{exit}}
-```
-
-The aggregate commitment shortfall is a lower bound by convexity, not exact expected shortfall.
-
-```math
-EV_0=\sum_{t=1}^{10}\frac{FCF_t}{(1+W)^t}+\sum_{t=11}^{30}\frac{E[FCF_t]}{(1+W)^t}+\frac{a_{30}B(I-B)^{-1}\mu}{(1+W)^{30}},\qquad B=\frac{P\,\mathrm{diag}(k(1+g),0.85k,1.08k(1+g),0)}{1+W}
-```
-
-```math
-V_{\mathrm{equity}}=EV_0+212.684-110.873
-```
-
-Pro forma cash and convertible carrying value are illustrative; actual final capitalization, debt repayment terms and dilution remain unresolved. No terminal sale price is assumed; cash flows after year 30 come from the closed-form continuation of the same lifecycle chain. Exit probabilities should not double-count credit risk in WACC.
-
-## 8. Validation and sensitivity analysis
-
-| Comparison / ablation | Equity residual |
-|---|---:|
-| Base, normal regime | 249.22 |
-| Without latent health | 152.68 |
-| Without additional duration | 252.08 |
-| Without explicit vendor transitions | 204.25 |
-| All disabled (open lifecycle) | 123.62 |
-| Constant winter | 54.35 |
-| Constant boom | 266.22 |
-
-Reduced-model references (same cost path): lifecycle DCF 183.37; Netflix constraint 183.24; industry and exit 202.92; customer cohorts 143.59; open lifecycle 123.62. Structural differences are not single-factor causal effects. In the cohort comparison, closure only 266.22, with commercial churn 143.59; additional top-five cuts of 25/50/100% yield 119.17/94.76/45.93. Open lifecycle without migration 98.85, without new seed entrants 118.54.
-
-### 8.1 Structural scenario inputs (assumptions)
+## 2. Scenario parameters (assumptions)
 
 | Parameter | Bear | Base | Bull |
 |---|---:|---:|---:|
-| Early/scaleup/SME/large weights | 30/30/25/15% | 15/25/30/30% | 5/15/30/50% |
+| Early / scale-up / SME / large weights | 30/30/25/15% | 15/25/30/30% | 5/15/30/50% |
 | Pilot fraction | 25% | 30% | 20% |
-| GTM success/rollout | .20/2 | .35/3 | .50/4 |
-| Initial volume/price multipliers | 1.45/.65 | 1.65/.78 | 1.85/.88 |
-| Acquisition rate/maturity replacement | .10/.50 | .20/1 | .30/1.25 |
+| Pilot success / rollout | .20 / 2 | .35 / 3 | .50 / 4 |
+| Initial volume / price | 1.45 / .65 | 1.65 / .78 | 1.85 / .88 |
+| Acquisition / replacement | .10 / .50 | .20 / 1 | .30 / 1.25 |
 | Subscription growth | 3% | 12% | 22% |
-| Compute/other/capex | .65/.35/.06 | .48/.25/.06 | .35/.20/.05 |
-| Tail exit/decline/renewal | .01654/.30/.03 | .001323/.20/.08 | .0009/.10/.15 |
-| Tail survivor terminal growth | 2.5% | 3% | 3.5% |
+| Steady compute / other / capex | .65 / .35 / .06 | .48 / .25 / .06 | .35 / .20 / .05 |
+| Terminal capture $c_{10}$ | 15% | 41% (held) | 50% |
+| Distress exit $e$ / decline / renewal | .00827 / .30 / .03 | .00132 / .20 / .08 | .0009 / .10 / .15 |
+| Terminal growth $g$ | 2.5% | 3% | 3.5% |
 | WACC | 15% | 12% | 10% |
 
-### 8.2 Point-in-time company-specific validation
+## 3. Evidence and validation
 
-Freeze the universe at the [September 8, 1999 top-ten market-cap ranking](https://www.internetnews.com/it-management/new-internet-giants-roam-the-street/), including the bankrupt and acquired issuers. [Vintage inputs](data/dotcom_vintage.csv) contain estimates from the [September 1999 Bear Stearns report, Exhibit 2](https://people.duke.edu/~charvey/Teaching/BA491_2000/Cc/Cc_BS.pdf) and separately identified SEC holdout outcomes. Blank cells are missing, not zero. The five available comparable CY2000 analyst forecasts have mean absolute percentage error 24.87%; this is an **external benchmark**, not validation of our joint-state model. Five lack comparable external forecasts. Acquisition/merger and fiscal-year scope must be reconciled before longer-horizon scoring.
+### 3.1 Release gate
 
-```math
-\operatorname{MAPE}=\frac1n\sum_i\left|\frac{\widehat R_i-R_i}{R_i}\right|
-```
+`python -m evaluation.validation_gate --audit` → **BLOCKED**. To release: at least 10 unexposed issuer families across 2 technology cycles, five-year equity WAPE ≤ 30%, absolute bias ≤ 15%, beat flat market cap and constant P/S, full company profiles, frozen predictions and an independent reviewer. The [acquisition endpoint policy](evaluation/acquisition_endpoint_policy.md) was **approved** on 2026-11-19 and is enforced by the gate. An acquired issuer is scored on the equity value paid at close against model equity at the matched horizon $k=\max(1,\mathrm{round}(\tau))$, never as zero.
 
-The same joint transition engine now accepts an explicit company profile (initial ledgers, customer weights and retention, transition and vendor kernels, reward, births, market limits, costs and lifecycle tail). Missing profiles fail rather than borrowing Claude parameters. The formerly proposed normalized transfer is not a company-specific forecast and must not be counted as validation. Firm-level bankruptcy and acquisition need separately estimated absorbing states; the present customer-exit process is not such an estimator.
-
-The [ten-company fiscal-year panel](data/dotcom_fy_panel.csv) and [executable evaluation](evaluation/company_oos.py) now run a reduced-state ablation of the actual joint transition operator. With each issuer's own FY1998–99 revenue and identical 50% log-growth shrinkage and seven-year fade:
+### 3.2 Margin path: stage-4 test, scored once
 
 ```math
-\widehat R_{i,t}=\widehat R_{i,t-1}\exp\left[0.5\log(R_{i,1999}/R_{i,1998})\max(0,1-(t-1)/7)\right]
+m=\frac{CFO-\mathrm{capex}-\mathrm{cap.\ software}}{\mathrm{revenue}}
 ```
 
-| Test | n | MAPE | WAPE | Within 20% |
+Preregistered and frozen before labels were opened ([prereg](evaluation/stage4_margin_preregistration.md), [score](evaluation/stage4_margin_score.json)). 11 of 17 issuers scored; the 6 acquired issuers are unlabelled.
+
+| Model (MAE, pp) | Dev LOO | Stage-4 all | 2015 | 2020 |
 |---|---:|---:|---:|---:|
-| FY2000 nowcast | 10 | 21.54% | 19.41% | 50% |
-| FY2001–04 future holdouts | 23 | 304.61% | 64.35% | 13.04% |
-| One-year half-life stress, FY2001–04 | 23 | 87.72% | 33.48% | 26.09% |
+| Hold origin margin | 9.64 | 23.44 | 18.60 | 25.26 |
+| Fade to 15% | 11.12 | 15.07 | 13.39 | 15.69 |
+| Pooled mean | 9.28 | 8.63 | 11.45 | 7.57 |
+| Converge, 3-year half-life | 8.56 | 6.77 | 10.10 | 5.52 |
+| **Leverage (preregistered pick)** | **4.94** | **8.87** | 5.99 | 9.94 |
 
-FY2000 flat-revenue and unattenuated-growth baselines have MAPE 50.23% and 129.32%. Seven original/reconciled input vintages yield 21.35% MAPE; three are retrospectively reconstructed. FY2000 overlaps the information-release dates, so it is a nowcast, not a fully prospective test. Missing post-merger or post-bankruptcy observations are censored, not treated as zero. The post-hoc half-life stress is not an independently validated calibration. Leave-one-company-out persistence fitted on FY1997–99 only yields 121.83% FY2000 MAPE and 88,714.78% FY2001–04 MAPE; boom-period growth persistence is not transferable.
+The pick was not promoted because it did not beat the pooled mean. The roster is now development data. On all 18 observations (`margin_development`), SBC-adjusted margins five to six years out have median 11.1% and P90 24.4%. A 3-year half-life converging to 18.1% (SBC-adjusted) has LOO MAE 7.26 pp, against 16.56 for holding the origin margin. The modeler was not blind to these firms' history.
 
-This is **not** a full customer-state or equity valuation backtest: aggregate revenue cannot identify customer-level acquisition, churn, pricing, costs or firm failure. Recall cannot be computed without defined and predicted failure labels. The long-horizon result rejects the aggregate growth extrapolation.
-
-#### Five-year endpoint (FY1999 to FY2004)
-
-[Supplemental SEC financial statements](data/dotcom_five_year.csv) provide eight comparable reported endpoints; AOL merger and Excite bankruptcy remain censored. No failure prediction is scored. The original fixed-fade MAPE/WAPE are 1,106.82%/230.14%; one-year half-life 120.15%/49.06%; flat 73.03%/61.19%.
-
-The reduced-state calibration caps the initial log growth and then decays it:
+### 3.3 Revenue growth persistence (development)
 
 ```math
-g_{i,0}=\operatorname{clip}(\alpha\ln(R_{i,1999}/R_{i,1998}),-c,c),\quad g_{i,t}=g_{i,0}2^{-(t-1)/h}
-```
-```math
-\widehat R_{i,t}=\widehat R_{i,t-1}\exp(g_{i,t})
+g_t=g_\infty+(g_0-g_\infty)\,2^{-t/H_g},\qquad g_0=\ln\frac{R_0}{R_{-1}},\qquad \ln\frac{R_h}{R_0}=\sum_{t\le h}g_t
 ```
 
-Leave out the target issuer entirely and minimize mean absolute log error over other issuers' FY2000–03 outcomes; no FY2004 outcome enters the fit. Five-year MAPE/WAPE 76.48%/41.08%. This is retrospective cross-company transfer and a terminal-year holdout, NOT a 1999-vintage calibration. A mature-growth extension worsens MAPE to 94.52%. The flat baseline remains better on MAPE. [Executable evaluation](evaluation/five_year.py).
-
-#### Alternative growth models
-
-The [model comparison](evaluation/growth_comparison.py) refits each candidate excluding the target issuer and every FY2004 outcome. The previous calibrated model underestimated six of eight issuers. A structural reason is the forced convergence to zero revenue growth, which cannot represent post-bubble demand recovery. Partial-year FY1998 sales and acquisitions further limit comparability. The alternative pooled recovery model uses:
-
-```math
-\ln(\widehat R_{i,t}/R_{i,0})=a(1-2^{-t})+bt
-```
-
-Ridge extensions use initial growth (neutralized for partial-year observations), log size and business-type indicators; Huber IRLS limits outliers. The fixed equal-weight geometric blend of the previous saturation and pooled recovery forecasts is:
-
-```math
-\widehat R_{i,t}^{blend}=\sqrt{\widehat R_{i,t}^{sat}\widehat R_{i,t}^{rec}}
-```
-
-| Model | MAPE | WAPE | Underpredicted |
-|---|---:|---:|---:|
-| Previous saturation | 76.48% | 41.08% | 6/8 |
-| Pooled trend | 110.80% | 191.72% | 2/8 |
-| Pooled recovery | 54.85% | 78.74% | 5/8 |
-| Ridge growth | 123.98% | 60.57% | 2/8 |
-| Ridge sector | 156.61% | 99.96% | 2/8 |
-| Ridge partial-year | 128.08% | 49.61% | 3/8 |
-| Huber recovery | 54.59% | 72.15% | 6/8 |
-| Huber size | 108.82% | 68.02% | 2/8 |
-| Geometric ensemble | 85.18% | 78.11% | 3/8 |
-| Saturation/recovery blend | 59.69% | 39.72% | 5/8 |
-
-Model selection on these same eight endpoints is exploratory; another cohort is required for an unbiased performance estimate. The pooled recovery model is not a company-specific lifecycle calibration and the blend is not a validated valuation model. Do not transplant its coefficients into Anthropic; separately estimate industry adoption, market share, monetization and margins from company-specific evidence.
-
-#### Company fundamentals and six-year validation
-
-[Company fundamentals and FY2005 outcomes](data/dotcom_fundamentals.csv) add nine sourced FY1999 gross margins, eight FY2005 revenues, and an explicitly missing Excite margin (training-fold median only). Some FY1999 accounting inputs are retrospective; ICG's FY2005 continuing-operation scope differs. No target issuer outcome, FY2004 or FY2005 outcome enters fitting. In each fold, the recovery regression adds log FY1999 revenue and/or gross margin to the sustained growth term. The size blend is a geometric average of the size forecast and the prior saturation/recovery blend.
-
-| Candidate | FY2004 MAPE | FY2005 MAPE | FY2004 WAPE | FY2005 WAPE |
-|---|---:|---:|---:|---:|
-| Fixed fade | 1106.82% | 1413.94% | 230.14% | 286.64% |
-| Flat | 73.03% | 76.05% | 61.19% | 67.81% |
-| Saturation | 76.48% | 82.39% | 41.08% | 51.12% |
-| Recovery | 54.85% | 59.36% | 78.74% | 72.98% |
-| Gross margin | 55.29% | 60.39% | 89.16% | 83.43% |
-| Size | 73.09% | 97.83% | 21.66% | 39.01% |
-| Margin and size | 72.95% | 95.18% | 26.87% | 34.27% |
-| Saturation/recovery blend | 59.69% | 63.89% | 39.72% | 39.22% |
-| Size blend | 62.04% | 71.47% | 29.98% | 31.82% |
-
-This new terminal year tests horizon robustness, not an independent issuer cohort. Gross margin does not consistently improve revenue predictions and should instead be tested in the cash-flow layer. Size improves dollar-weighted error but does not reliably improve relative error. No fitted Anthropic valuation change is justified. [Reproduction](evaluation/fundamental_growth.py).
-
-#### Independent issuer cohort (five-year endpoint)
-
-Eight additional issuers were identified from the contemporary December 1999 article *Internet Stocks, Naughty And Nice*: BroadVision, CMGI, DoubleClick, Exodus, Go2Net, InfoSpace, RealNetworks and VeriSign. The original ten issuers alone fit parameters using FY2000–03; prior WAPE selected the size blend as primary. Six standalone FY2004 endpoints are available; Exodus bankruptcy and Go2Net acquisition are censored, not treated as zero revenue. Retrospective accounting restatements and acquisitions mean this is issuer-external, not strict time-external validation.
-
-| Model | MAPE | WAPE | Within 20% |
-|---|---:|---:|---:|
-| Flat | 57.35% | 69.97% | 16.67% |
-| Original | 161.72% | 94.95% | 0% |
-| Saturation | 71.75% | 60.21% | 33.33% |
-| Recovery | 145.28% | 95.77% | 0% |
-| Size | 206.95% | 115.68% | 16.67% |
-| Blend | 102.22% | 74.16% | 0% |
-| Size blend (primary) | 146.96% | 92.10% | 0% |
-
-The primary model fails to generalize; saturation improves weighted error but flat wins MAPE. Do not promote a new winner from this holdout. These are revenue errors conditional on standalone survival, not equity-value errors. The next validation must address competing exit states, organic versus acquired revenue and independent calendar windows.
-
-[Data and filing links](data/dotcom_external_cohort.csv) · [Reproduction](evaluation/external_validation.py)
-
-#### Competing exits and acquisition scope
-
-Estimate separate standalone, bankruptcy and merger endpoint probabilities from the original ten issuers (8/1/1) with a symmetric Dirichlet(0.5) prior. The annual constant-hazard matrix reproduces the five-year cumulative probabilities. Recovery or merger consideration is not assumed zero. The valuation expression is an extension specification, not an identified Anthropic hazard or implemented change to base DCF.
-
-$
-\widehat p_k=\frac{n_k+1/2}{N+3/2},\quad s=\widehat p_S^{1/5},\quad q_k=(1-s)\frac{\widehat p_k}{1-\widehat p_S}
-$
-
-$
-P=\begin{pmatrix}s&q_B&q_M\\0&1&0\\0&0&1\end{pmatrix}
-$
-
-$
-V_0=\mathbb E\left[\sum_{t=1}^{\min(T,\tau)}\frac{FCFF_t}{(1+r)^t}+\frac{L_\tau\mathbf1_{\tau\le T}}{(1+r)^\tau}\right]
-$
-
-$
-R_t=R_t^{organic}+R_t^{acquired}-R_t^{disposed}
-$
-
-$
-\Delta NPV=p_{close}\left(\sum_{t=1}^{H}\frac{\Delta FCFF_t}{(1+r)^t}-C_{deal}\right)
-$
-
-| Five-year state | Posterior mean | External observed |
-|---|---:|---:|
-| Standalone | 73.91% | 75% |
-| Bankruptcy | 13.04% | 12.5% |
-| Merger | 13.04% | 12.5% |
-
-External multiclass Brier score 0.406 versus 0.500 always standalone and 0.667 uniform; log loss 0.736 versus 1.099 uniform. Marginal 95% posterior intervals for both exits around 1–37%; the external cohort was previously inspected, so this is retrospective, not a fresh independent test. The model is pooled, not issuer-specific.
-
-Revenue scope audit: PayPal accounted for 20.21% of eBay's 2003 revenue; Jamba accounted for 15.50% of VeriSign's 2004 revenue. Removing Jamba alone reduces VeriSign saturation APE from 84.19% to 81.28%, so acquisitions explain only part of the miss. Yahoo's US incremental acquisition revenues are a different metric and are not pooled with segment revenue. Ex-component revenue is not complete organic revenue. Future deal probabilities, prices and costs must be estimated separately; disclosed realized acquisitions cannot be fed into an earlier forecast. Negative NPV deals reduce value. No validated equity estimate change.
-
-[Exit evidence](data/dotcom_exit_events.csv) · [Acquisition evidence](data/dotcom_acquisition_components.csv) · [Model](evaluation/competing_risk.py)
-
-#### Financial factors and covariance regularization
-
-Features: 1999 log revenue, clipped 1998–99 log growth, gross margin, operating cash flow/revenue. Coverage among 16 inputs: 16/14/11/8. Missing/partial-year values are training-fold median-imputed; annualized liquidity is not used because comparable cash-only values are insufficient. Retrospective restatements remain. Correlations in the imputed original cohort: size/growth −0.825, gross/CFO margin +0.671. VIF 3.41/3.55/1.88/1.98. Covariance is not itself a defect: compare Ridge, shrink-whitening, PCA regression and ordered residualization; projection is training-only and orthogonal in training, not necessarily in new regimes. Hyperparameters and method selection use nested issuer folds on 2000–03 only, with equal issuer weights. No 2004 endpoint training. Prior external cohort was inspected; these are retrospective diagnostic comparisons.
-
-$
-z_{ij}=(x_{ij}-\mu_j)/\sigma_j,\qquad C=Z^\top Z/n
-$
-
-$
-C_\alpha=(1-\alpha)C+\alpha I,\qquad \widetilde Z=Z C_\alpha^{-1/2}
-$
-
-$
-z_j^\perp=z_j-Z_{<j}(Z_{<j}^\top Z_{<j})^+Z_{<j}^\top z_j
-$
-
-$
-\widehat\beta=\arg\min_\beta\sum_i w_i(y_i-X_i\beta)^2+\lambda\|\beta_F\|_2^2
-$
-
-$
-\widehat R_{it}=R^{sat}_{it}\exp\left[(1-2^{-t})(b_0+z_i^\perp b)\right]
-$
-
-| Model | Original MAPE | Original WAPE | External MAPE | External WAPE |
-|---|---:|---:|---:|---:|
-| OLS | 63.62% | 63.95% | 643.21% | 317.98% |
-| Ridge | 67.68% | 62.00% | 289.60% | 138.37% |
-| Covariance shrinkage | 57.85% | 32.65% | 213.92% | 116.94% |
-| PCR | 67.05% | 35.08% | 147.66% | 89.91% |
-| Orthogonal residuals | 52.27% | 18.62% | 227.48% | 123.28% |
-| Saturation | 76.48% | 41.08% | 71.75% | 60.21% |
-| Anchored residual correction | 78.41% | 50.96% | 84.68% | 63.45% |
-| Nested method selection | 64.77% | 36.41% | 227.48% | 123.28% |
-
-Orthogonal residuals improve original WAPE but fail externally; anchored correction is less unstable but does not beat uncorrected saturation. Do not deploy factor coefficients to Anthropic. Cash runway, debt maturity, concentration, share and price need comparable historical and Anthropic-specific inputs before estimation. No change to valuation. [Financial data](data/dotcom_cash_factors.csv) · [Code](evaluation/covariance_factors.py)
-
-#### Capital intensity, development expenditure and liquidity
-
-Add historical capex/revenue, development/revenue (not measured R&D efficiency), cash equivalents/revenue and inverse runway proxy. Coverage 10/10/8/8 of 16; CFO coverage now 10. Four issuers disclose whether a customer is at least 10%; record but do not fit due to insufficient coverage. No inferred debt, market share or elasticity. Amazon technology/content is broader than R&D; accounting scopes differ. Group ablation uses training-only median-free observed mean scaling, missing standardized signals zero, covariance shrink whitening and coverage weights; nested issuer folds choose ridge and whitening parameters using 2000–03 only. The one-standard-error rule is a conservative heuristic, not a formal confidence interval. Previously inspected external cohort is diagnostic.
-
-$
-x_{\mathrm{capex}}=\frac{Capex}{R},\quad x_{\mathrm{dev}}=\frac{Development}{R},\quad x_{\mathrm{cash}}=\log(1+Cash/R)
-$
-
-$
-x_{\mathrm{burn}}=\log\left(1+\frac{\max(0,Capex-CFO)}{Cash}\right)
-$
-
-$
-Z^*=Z[(1-\alpha)C+\alpha I]^{-1/2}D,\quad D_{jj}=\sqrt{coverage_j}\mathbf1_{coverage_j\ge0.5}
-$
-
-$
-\widehat R_{it}=R^{sat}_{it}\exp\left[\operatorname{clip}((1-2^{-t})Z_i^*\widehat\beta,-1,1)\right]
-$
-
-$
-\widehat M=\arg\min_{M: L_M\le L_{best}+SE_{best}}d_M
-$
-
-| Model | Original WAPE | External WAPE |
-|---|---:|---:|
-| Saturation | 41.08% | 60.21% |
-| Baseline factors | 47.72% | 72.14% |
-| Investment | 41.25% | 60.18% |
-| Liquidity | 48.58% | 66.40% |
-| All factors | 53.33% | 60.21% |
-| No liquidity | 51.26% | 60.16% |
-| No investment | 51.86% | 63.82% |
-| Nested selection | 51.57% | 66.40% |
-| One-standard-error rule | 39.96% | 60.21% |
-
-No meaningful external improvement; conservative selection recovers saturation externally, while original WAPE improves 1.12 percentage points. No fitted coefficient transfer or valuation change. Anthropic stored filing inputs imply 9m CFO margin 19.76%, capex ratio 2.78%, CFO minus capex $5.644B, cash/investments versus next-12-month gross commitments 1.86x, through-2030 commitments/cash 3.43x, financing/CFO 16.86x, top-five direct customer share 25% and HHI lower bound 0.0125. Gross commitment coverage is not runway or a net cash forecast; cash includes investments and does not match historical cash equivalents. CFO less capex is not FCFF, and compute leases/commitments require separate cash timing without double counting. [Data](data/dotcom_structural_factors.csv) · [Code](evaluation/structural_factors.py)
-
-
-#### Cross-cycle cloud validation (FY2020–FY2025)
-
-The [Bessemer State of Cloud 2020](https://www.bvp.com/atlas/state-of-the-cloud-2020) identified five public cloud companies above $50B market cap: Adobe, Salesforce, PayPal, ServiceNow, Shopify. Select all five, not later winners. FY2019/20 SEC filings are inputs; FY2025 SEC filings are outcomes. Forecast origin is after FY2020 reporting, not January 2020. See [data](data/cloud_cycle_cohort.csv).
-
-The previous size blend is frozen before this test:
-
-```math
-\widehat R_5=\widehat R_{size}^{1/2}(\widehat R_{sat}\widehat R_{recovery})^{1/4}
-```
-
-An endpoint prior fits the original and independent 1999 issuers with observed 2004 endpoints, minimizing mean absolute log error plus a fixed mature-growth penalty:
-
-```math
-L(\theta)=\frac1n\sum_i|\log(\widehat R_{i,5}(\theta)/R_{i,5})|+0.5|g_{\infty}|
-```
-
-| Model | WAPE | MAPE | Signed bias |
-|---|---:|---:|---:|
-| Flat | 50.81% | 55.34% | -50.81% |
-| Original | 25.16% | 27.52% | -25.16% |
-| Saturation | 38.12% | 42.01% | -38.12% |
-| Endpoint prior | 31.02% | 34.18% | -31.02% |
-| Size | 20.74% | 23.36% | -20.74% |
-| Blend | 18.61% | 21.70% | +2.84% |
-| Frozen size blend | 16.25% | 19.58% | -9.86% |
-| Fixed 15% log growth diagnostic | 15.94% | 17.10% | +7.28% |
-
-The 15% floor is an exploratory sensitivity, not a validated winner or a perpetual terminal growth rate. The frozen blend remains the benchmark; no Anthropic valuation adjustment is justified by these five surviving, large and heterogeneous issuers. This validates consolidated revenue only, not cash flow or equity value. Historical inputs may include retrospective restatements; cloud data have FY-specific cutoffs and M&A effects. No cloud outcomes enter the forecast fit (tested). Run `python -m evaluation.cloud_cycle`.
-
-
-#### Five-year equity valuation holdout (FY2020–FY2025)
-
-Use only FY2020 and earlier financial inputs to forecast year-end 2025 equity capitalization. The reduced-state finite lifecycle DCF uses the frozen size-blend revenue forecast, CFO less capex as an imperfect FCFF proxy, the issuer's own origin margin held constant (previously forced to 15%), the shared exit hazards, fixed net cash and 12% discount rate.
-
-```math
-\widehat V_5=\sum_{t=6}^{10}\frac{\widehat{FCF}_t}{(1+W)^{t-5}}+(1+W)^5PV_0(FCF_{11:\infty})+Cash_0-Debt_0
-```
-
-| Company | Actual 2025 cap | Predicted equity |
-|---|---:|---:|
-| Adobe | 146.51 | 87.97 |
-| Salesforce | 248.22 | 114.44 |
-| PayPal | 54.62 | 143.76 |
-| ServiceNow | 159.32 | 33.92 |
-| Shopify | 209.56 | 35.60 |
-
-Equity WAPE **70.98%** (was 83.13%), MAPE 83.75%, signed bias −49.20%, ±20% hit rate zero. Holding the origin margin instead gives 69.09%: convergence does not help this mature, previously exposed cohort (PayPal's margin fell), but the margin path is chosen on the 18-observation margin panel, not on this equity backtest. Flat market cap WAPE 58.82%; constant price-to-sales 124.89%. The old shared-15% margin variant gives 77.21%. At 8% discount rate WAPE is 61.37%; full cash retention gives 66.02%. **Auxiliary (not gate) metrics:** five-year revenue WAPE 16.25%, Spearman 0.9; five-year FCF proxy WAPE 37.91%, Spearman 0.7; equity Spearman −0.3. The model ranks fundamentals well but not market caps, so most equity error is multiple dispersion (10x–104x 2025 FCF), not cash-flow error. The selection of these fixes followed inspection of this cohort, so it remains a development diagnostic. [Source data](data/cloud_equity_cohort.csv). Run `python -m evaluation.cloud_equity`. Leakage test changes future revenue and capitalization without changing predictions.
-
-**Valuation verification failed.** Revenue WAPE of 16.25% is not equity accuracy. Market value is not intrinsic value; fiscal-year/calendar mismatches remain. This is a reduced-state transfer, not validation of the full customer-level model. CFO-capex omits complete treatment of interest, SBC, financing and acquisitions. Do not multiply Anthropic valuation by the observed error ratio; independently calibrate margins, capital structure, lifecycle and discount rates.
-
-
-#### End-to-end joint-model audit: pre-training, training, post-training
-
-[Vintage company filings](data/cloud_company_vintage.csv) add FY2020 subscription revenue, operating income, depreciation and amortization, and FY2025 cash flows. Revenue ledgers reconcile. PayPal all-other is an unclassified proxy, not evidence of zero subscription; Salesforce D&A is approximate. ServiceNow 98% renewal is recorded but not equated with cohort retention.
-
-1. Pre-training: audit vintage, units, accounting definitions and ledger reconciliation; fail closed for missing customer data instead of borrowing Anthropic parameters.
-2. Training: calibrate revenue decay on 1999 issuers' 2000–03 histories only. Freeze size blend. Equity parameters have not been fitted; WACC, issuer exit and tail rewards remain assumptions.
-3. Post-training: call the original `forecast_joint()` company-profile interface directly under an aggregate restriction. Missing customer migration, vendor switching, trials and ceilings prevent full validation. The viewed 2020 cohort is diagnostic, not an untouched final test. Strict mode refuses unidentified profiles.
-
-```math
-FCFF_t^{proxy}=EBIT_t-0.25\max(EBIT_t,0)+DA_t-CapEx_t
-```
-
-Incremental working capital is assumed zero; economic SBC remains in EBIT. Observed CFO less capex differs in interest, working capital and SBC, so cash flow error is only a mismatched-definition diagnostic.
-
-```math
-\widehat V_5=(EV_0-\sum_{t=1}^{5}\frac{FCFF_t}{(1+W)^t})(1+W)^5+Cash_0-Debt_0
-```
-
-| Company | Predicted equity | Actual cap |
-|---|---:|---:|
-| Adobe | 43.20 | 146.51 |
-| Salesforce | 24.85 | 248.22 |
-| PayPal | 35.06 | 54.62 |
-| ServiceNow | 3.85 | 159.32 |
-| Shopify | 7.05 | 209.56 |
-
-Revenue WAPE 16.25%; cash-flow proxy WAPE 57.64% (definition mismatch); equity WAPE **86.07%**, MAPE 78.11%. Zero complete customer profiles. Do not reuse the revealed cloud cohort as an untouched final test. A newly frozen cohort and equity-loss calibration are required. Run `python -m evaluation.joint_model_audit`. Four added checks pass; 58 unittest tests pass.
-
-### 8.3 Anthropic-specific filing calibration and accounting sensitivity
-
-The [final prospectus](https://www.sec.gov/Archives/edgar/data/2130357/000162828026074944/anthropicpbc-424b4.htm) and [operating expense table](https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm) support the [company-specific anchors](data/company_specific_anchors.csv): 11,900+ customers above $100k TTM, 1,900+ above $1m, about 250 above $10m, and $26.1B TTM revenue from the first group. Thresholds are nested, not customer life stages. 900% NRR compares corresponding quarterly revenue from existing qualified customers, excluding fixed-price personal plans; it does not identify gross retention or a future growth rate.
-
-```math
-c_{\mathrm{compute}}=18.808/33.242=56.58\%,\quad c_{\mathrm{other}}=15.694/33.242=47.21\%
-```
-
-```math
-\Delta V_{\mathrm{bridge}}=(232.351-109.742)-(212.684-110.873)=20.798\ \mathrm{B}
-```
-
-| Base 1,024 paths, seed 42 | Mean equity residual ($B) |
+| Model (LOO MAE, log revenue) | 18 obs |
 |---|---:|
-| Original assumptions, updated pro forma as-adjusted bridge | 220.52 |
-| Observed compute expense ratio held constant | 135.26 |
-| Both reported expense ratios held constant | -153.05 |
+| Flat | 1.436 |
+| Hold $g_0$ | 0.660 |
+| Engine-style linear 7-year fade from $g_0$ | 0.242 |
+| Fitted decay ($H_g$ = 4, $g_\infty$ = 6.5%) | 0.221 |
 
-These are sensitivities only: accrual expense includes noncash items, and treating it as a cash ratio indefinitely is not a calibrated FCFF forecast. The updated bridge is a conditional accounting figure, not proof of completed financing or settlement. Customer life-stage weights, cohort transition probabilities, consumer conversion, and sustainable marginal cost are still unidentified. Do not replace the main conditional scenario with a claim of empirically validated fair value.
+The engine's fade shape fits about as well as the fitted decay. Its base path from 81 equals a SaaS issuer with $g_0\approx$ 0.24–0.29, the 17th–33rd percentile of the panel. Anthropic's observed $g_0\approx$ 2.57 is far above the panel maximum of 0.63, so this evidence cannot adjudicate the starting point. No default was changed.
 
+### 3.4 Exits (development)
 
-#### Anthropic accounting re-audit
+| Roster (5 years) | n | Acquired | Bankrupt | Acquisitions per year |
+|---|---:|---:|---:|---:|
+| Cloud 2015 | 10 | 5 | 0 | ≈12% |
+| Cloud 2020 | 14 | 1 | 0 | ≈2% |
+| Dot-com 1999 | 18 | 2 | 2 | — |
 
-[Source audit](data/anthropic_accounting_audit.csv): 9m2026 revenue 33.242, consumption 26.306, subscription 6.936, compute 18.808, operating loss 1.260, CFO 6.569, capex 0.925, lease prepayments 1.955, D&A 0.250, SBC 3.255, interest income 2.359 (USD B). CFO less capex is 5.644; additionally deducting lease prepayments gives 3.689; neither equals FCFF. The conditional 232.351 cash and 109.742 convertible amounts were not reverified because the final prospectus was inaccessible in this audit. Do not transfer unvalidated changes into a fair-value claim.
+Acquired cloud issuers were $3–26B; the five 2015 deals paid 1.0–2.2x the May-2015 market cap ([events](data/stage4_exit_events.csv)). Hence exit hazard $e$ is distress-only (§1.3.1).
 
-#### Growth-decay transfer sensitivity
+### 3.5 Five-year equity backtest, exposed cloud cohort (diagnostic)
 
-The original joint model's common fade can be replaced with exponential half-life 0.5–2 years. These are stress scenarios informed by the historical folds, not identified Anthropic transition probabilities. Using 128 common macro paths, seed 42, adjusted balance sheet:
+Five Bessemer 2020 issuers, FY2020 inputs, end-2025 market cap. Margins converge to a family-excluded $m^\ast$ (§3.2).
 
-| Growth fade | Original cost | Reported compute ratio | Both reported expense ratios |
+| Metric | Model | Flat cap | Constant P/S |
 |---|---:|---:|---:|
-| Original | 217.46 | 133.21 | -152.04 |
-| 0.5 year | 87.20 | 41.11 | -124.37 |
-| 1 year | 125.07 | 69.59 | -126.45 |
-| 2 years | 191.43 | 114.45 | -147.52 |
+| Equity WAPE | 70.98% | 58.82% | 124.89% |
+| Equity bias | −49.20% | +17.73% | +124.89% |
+| Equity Spearman | −0.3 | −0.6 | −0.6 |
+| Revenue / FCF WAPE | 16.25% / 37.91% | — | — |
+| Revenue / FCF Spearman | 0.9 / 0.7 | — | — |
 
-These are mean equity residuals ($B), not validated fair-value estimates. Expense ratios are accrual proxies; no validated equity backtest.
+The model ranks fundamentals well but not market caps; equity error is mostly multiple dispersion (10x–104x 2025 FCF). Variants: hold margin 69.09%; old shared 15% margin 77.21%; WACC 8% 61.37%.
 
-## 9. Reproduction and data
+### 3.6 Earlier experiments (all retrospective, none promoted)
 
-118 local tests pass, including baseline nesting, probability sums, cumulative graduation, population conservation, budget bounds, initial invoices and reproducibility. Reduced-state historical backtest completed; full valuation backtest remains open. Key unidentified inputs: country paid conversion, customer revenue mix, funding provenance, financial transition, market capture and vendor migration.
+| Experiment | Result | Script |
+|---|---|---|
+| 1999 top-10 FY2000 nowcast | MAPE 21.54% (flat 50.23%) | `company_oos` |
+| FY2001–04 fixed fade | MAPE 304.61%; rejected | `company_oos` |
+| Five-year saturation, leave-issuer-out | WAPE 41.08% (flat 61.19%) | `five_year` |
+| External 1999 cohort | saturation WAPE 60.21% (flat 69.97%) | `external_validation` |
+| Financial factors / covariance | no external improvement | `covariance_factors`, `structural_factors` |
+| Cloud 2020 revenue, frozen size blend | WAPE 16.25% (flat 50.81%) | `cloud_cycle` |
+| Joint engine, aggregate restriction | equity WAPE 86.07% | `joint_model_audit` |
+| Equity-loss training transfer | 88.48 / 61.40 / 65.63% (flat 58.82%) | `equity_training` |
+| Dot-com competing exits | standalone / bankrupt / merger 74 / 13 / 13% | `competing_risk` |
+
+### 3.7 Sensitivities (base, normal regime)
+
+| Variant | Equity |
+|---|---:|
+| Base | 249.22 |
+| No latent health | 152.68 |
+| No extra duration | 252.08 |
+| No vendor transitions | 204.25 |
+| All disabled (open lifecycle) | 123.62 |
+| Constant winter / boom | 54.35 / 266.22 |
+| Costs jump to steady state at t = 1 | 322.58 |
+| 1,024-path mean, as-adjusted bridge: original / reported compute ratio held / both ratios held | 220.52 / 135.26 / −153.05 |
+
+## 4. Reproduce
 
 ```bash
+pip install numpy scipy
+python -m unittest discover -s evaluation -p 'test_*.py'   # 123 tests
+python -m evaluation.validation_gate --audit
 python -m models.joint_customer_states
-python -m evaluation.company_oos
-python -m evaluation.five_year
 python -m evaluation.reverse_dcf --equity 1200
 python -m evaluation.margin_path --verify
 python -m evaluation.margin_development
 python -m evaluation.growth_persistence
 python -m evaluation.saas_exit
-python -m evaluation.growth_comparison
-python -m evaluation.fundamental_growth
-python -m evaluation.external_validation
-python -m evaluation.competing_risk
-python -m evaluation.covariance_factors
-python -m evaluation.structural_factors
-python -m unittest discover -s evaluation -v
+python -m evaluation.cloud_equity
 ```
 
-- [Main model](models/joint_customer_states.py)
-- [Open lifecycle model](models/customer_markov.py)
-- [Customer cohorts](models/customer_cohorts.py)
-- [Industry calibration](models/industry_calibration.py)
-- [Financial observations](data/observations.csv)
-- [Industry data](data/industry_spending.csv)
-- [Customer risk data](data/customer_risk.csv)
-- [Lifecycle data](data/markov_anchors.csv)
-- [Joint-state data](data/joint_state_anchors.csv)
-- [Data definitions](data/README.md)
-- [Tests](evaluation/test_joint_customer_states.py)
+Data definitions: [data/README.md](data/README.md). Protocol: [MODEL_VALIDATION_PROTOCOL.md](MODEL_VALIDATION_PROTOCOL.md), [AGENTS.md](AGENTS.md).

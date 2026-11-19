@@ -3,7 +3,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from evaluation.validation_gate import (ARTIFACTS, COMPONENTS, MECHANISMS, check, sha, score, source_fingerprint,
+from evaluation.validation_gate import (ARTIFACTS, COMPONENTS, MECHANISMS, check, sha, score, source_fingerprint, event_horizon,
     audit, MAX_WAPE, MAX_BIAS, MIN_FAMILIES, MIN_CYCLES)
 
 class TestGate(unittest.TestCase):
@@ -102,5 +102,25 @@ class TestGate(unittest.TestCase):
     def test_unjustified_zero(self):
         self.traces[0]['status']='evidence_supported_structural_zero';self.write('execution_trace',self.traces)
         self.assertEqual(self.result()['status'],'BLOCKED')
+    def acquire(self,**kw):
+        z=self.labels[0]; z.update(outcome='acquired_documented',event_date='2014-06-30',value_basis='per_share_x_diluted',equity_market_cap_usd_b=200)
+        for r in self.labels[1:]: r.setdefault('event_date',''); r.setdefault('value_basis','')
+        z.update(kw); self.write('labels',self.labels)
+        for r in self.preds: r.setdefault('horizon_years',5)
+        self.preds[0]['horizon_years']=kw.pop('h',2) if 'h' in kw else 2; self.write('predictions',self.preds)
+    def test_acquisition_endpoint_accepted(self):
+        self.acquire(); res=self.result()
+        self.assertEqual(res['status'],'GATE_PASS_REQUIRES_AUTHENTICATED_REVIEW'); self.assertEqual(res['scores']['event']['n'],1)
+    def test_acquisition_horizon_mismatch(self):
+        self.acquire(); self.preds[0]['horizon_years']=5; self.write('predictions',self.preds)
+        self.assertIn('acquisition horizon mismatch: 2',self.result()['errors'])
+    def test_acquisition_zero_or_missing_date(self):
+        self.acquire(equity_market_cap_usd_b=0); self.assertIn('acquisition label must be positive: 2',self.result()['errors'])
+        self.acquire(event_date=''); self.assertEqual(self.result()['status'],'BLOCKED')
+    def test_event_horizon(self):
+        from datetime import date
+        self.assertEqual(event_horizon(date(2015,12,31),date(2016,12,8)),1)
+        self.assertEqual(event_horizon(date(2015,12,31),date(2016,3,1)),1)
+        self.assertEqual(event_horizon(date(2015,12,31),date(2019,5,3)),3)
     def test_zero_safe(self):
         self.assertEqual(score([0,10],[0,10])['log_mae'],0)
